@@ -28,7 +28,7 @@ if __name__ == "__main__":
     world.merge(arena)
 
     # add a gripper
-    gripper = RethinkGripper()
+    gripper = PandaGripper()
     # Create another body with a slider joint to which we'll add this gripper
     gripper_body = ET.Element("body", name="gripper_base")
     gripper_body.set("pos", "0 0 1.3")

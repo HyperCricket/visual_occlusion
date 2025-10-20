@@ -6,6 +6,8 @@ APIs of the MJCF utility functions.
 
 Example:
     $ python run_gripper_test.py
+
+    This is redundant code to us now
 """
 
 import xml.etree.ElementTree as ET
@@ -27,11 +29,11 @@ if __name__ == "__main__":
     world = MujocoWorldBase()
 
     # add a table
-    arena = TableArena(table_full_size=(0.4, 0.4, 0.05), table_offset=(0, 0, 1.1), has_legs=False)
+    arena = TableArena(table_full_size=(0.6, 0.6, 0.15), table_offset=(0, 0, 0.5), has_legs=True)
     world.merge(arena)
 
     # add a gripper
-    gripper = RethinkGripper()
+    gripper = PandaGripper()
     # Create another body with a slider joint to which we'll add this gripper
     gripper_body = ET.Element("body", name="gripper_base")
     gripper_body.set("pos", "0 0 1.3")
@@ -52,6 +54,15 @@ if __name__ == "__main__":
     mujoco_object.set("pos", "0 0 1.11")
     # Add our object to the world body
     world.worldbody.append(mujoco_object)
+
+    # add another block for grasping, on the table
+    gray_block = BoxObject(
+            name="gray_block", size=[0.02, 0.02, 0.02], rgba=[0.5, .5, 0.5, 1], friction=[1, 0.005, 0.001]
+            ).get_obj()
+    # Set position of this object
+    gray_block.set("pos", "0 0 1.11")
+    # Add our object to the world body
+    world.worldbody.append(gray_block)
 
     # add reference objects for x and y axes
     x_ref = BoxObject(
@@ -116,14 +127,14 @@ if __name__ == "__main__":
                 print("changing plan: gripper low: {}, gripper closed {}".format(gripper_z_is_low, gripper_is_closed))
 
             # Control gripper
-            if gripper_z_is_low:
-                data.ctrl[gripper_z_id] = gripper_z_low
-            else:
-                data.ctrl[gripper_z_id] = gripper_z_high
-            if gripper_is_closed:
-                data.ctrl[gripper_jaw_ids] = gripper_closed
-            else:
-                data.ctrl[gripper_jaw_ids] = gripper_open
+            # if gripper_z_is_low:
+                # data.ctrl[gripper_z_id] = gripper_z_low
+            # else:
+                # data.ctrl[gripper_z_id] = gripper_z_high
+            # if gripper_is_closed:
+                # data.ctrl[gripper_jaw_ids] = gripper_closed
+            # else:
+                # data.ctrl[gripper_jaw_ids] = gripper_open
 
             # Step through sim
             mujoco.mj_step(model, data)

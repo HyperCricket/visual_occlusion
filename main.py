@@ -1,3 +1,6 @@
+""" 
+    Testing the environment code, this code is redundant to us now at this point (10/20/25)
+"""
 # import os
 # os.environ['MUJOCO_GL'] = 'egl'
 

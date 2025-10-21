@@ -3,20 +3,57 @@
     In order to have I/O, you need to run this python file as the root user
     Example: sudo ~/venvs/mj/bin/python control.py
 """
-import argparse
-import time
 
+import time
 import numpy as np
 
 import robosuite as suite
-from robosuite import load_composite_controller_config
 from robosuite.controllers.composite.composite_controller import WholeBody
 from robosuite.wrappers import VisualizationWrapper
 from robosuite.devices import Keyboard
+from robosuite.environments.manipulation.lift import Lift
+from robosuite.models.objects import BoxObject
+
+from robosuite.environments.manipulation.stack import Stack
+from robosuite.utils.placement_samplers import UniformRandomSampler
 
 # Create environment
-env = suite.make(
-    env_name = "Lift",
+# env = suite.make(
+    # env_name = "Stack",
+    # robots="Panda",
+    # has_renderer=True,
+    # has_offscreen_renderer=False,
+    # render_camera="agentview",
+    # ignore_done=True,
+    # use_camera_obs=False,
+    # reward_shaping=True,
+    # control_freq=20,
+    # hard_reset=False,
+# )
+
+class StackWithCustomRandomization(Stack):
+    def _load_model(self):
+        super()._load_model()
+        
+        # Get the objects from the existing placement initializer
+        existing_objects = self.placement_initializer.mujoco_objects
+        
+        # Replace with customized randomization
+        self.placement_initializer = UniformRandomSampler(
+            name="ObjectSampler",
+            mujoco_objects=existing_objects,  # Use objects from parent
+            x_range=[-0.20, 0.20],  # Wider X range
+            y_range=[-0.20, 0.20],  # Wider Y range
+            rotation=(-np.pi/3, np.pi/3),  # Add rotation randomization
+            rotation_axis='z',
+            ensure_object_boundary_in_range=False,
+            ensure_valid_placement=True,
+            reference_pos=self.table_offset,
+            z_offset=0.01,
+        )
+
+# Then replace your suite.make() call with:
+env = StackWithCustomRandomization(
     robots="Panda",
     has_renderer=True,
     has_offscreen_renderer=False,

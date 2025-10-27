@@ -60,7 +60,7 @@ def collect_human_trajectory(env, device, arm, max_fr, goal_update_mode):
         active_robot = env.robots[device.active_robot]
 
         # Get the newest action
-        input_ac_dict = device.input2action(goal_update_mode=goal_update_mode)
+        input_ac_dict = device.input2action()
 
         # If action is none, then this a reset so we should break
         if input_ac_dict is None:

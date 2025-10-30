@@ -18,6 +18,7 @@ import robosuite as suite
 from robosuite.controllers import load_composite_controller_config
 from robosuite.controllers.composite.composite_controller import WholeBody
 from robosuite.wrappers import DataCollectionWrapper, VisualizationWrapper
+from multi_cube_lift import MultiCubeLift
 
 
 def collect_human_trajectory(env, device, arm, max_fr, goal_update_mode):
@@ -316,16 +317,10 @@ if __name__ == "__main__":
         config["env_configuration"] = args.config
 
     # Create environment
-    env = suite.make(
-        **config,
-        has_renderer=True,
-        renderer=args.renderer,
-        has_offscreen_renderer=False,
-        render_camera=args.camera,
-        ignore_done=True,
-        use_camera_obs=False,
-        reward_shaping=True,
-        control_freq=20,
+    env = MultiCubeLift(
+    robots="Panda",
+    use_camera_obs=False,
+    has_renderer=True,
     )
 
     # Wrap this with visualization wrapper

@@ -19,6 +19,7 @@ from robosuite.controllers import load_composite_controller_config
 from robosuite.controllers.composite.composite_controller import WholeBody
 from robosuite.wrappers import DataCollectionWrapper, VisualizationWrapper
 from control.py import StackWithCustomRandomization
+from multi_lift.py import MultiCubeLift
 
 
 def collect_human_trajectory(env, device, arm, max_fr, goal_update_mode):
@@ -316,19 +317,18 @@ if __name__ == "__main__":
     if "TwoArm" in args.environment:
         config["env_configuration"] = args.config
 
-    # Create environment
-    env = StackWithCustomRandomization(
-    num_cubes=5,  # Change this to add more or fewer cubes
-    robots="Panda",
-    has_renderer=True,
-    has_offscreen_renderer=False,
-    render_camera="agentview",
-    ignore_done=True,
-    use_camera_obs=False,
-    reward_shaping=True,
-    control_freq=20,
-    hard_reset=False,
+    # Create the environment
+    env = MultiCubeLift(
+        robots="Panda",          # single robot arm
+        use_camera_obs=True,     # include camera observations
+        reward_shaping=True,     # use dense rewards
+        has_renderer=True,       # enable on-screen rendering
+        has_offscreen_renderer=False,
+        horizon=500,             # max steps per episode
+        control_freq=20,         # Hz
+        seed=42,                 # reproducibility
     )
+
 
     # Wrap this with visualization wrapper
     env = VisualizationWrapper(env)

@@ -13,38 +13,81 @@ from robosuite.wrappers import VisualizationWrapper
 from robosuite.devices import Keyboard
 from robosuite.environments.manipulation.lift import Lift
 from robosuite.models.objects import BoxObject
+from robosuite.models.arenas import TableArena
+from robosuite.models.tasks import ManipulationTask
 
 from robosuite.environments.manipulation.stack import Stack
 from robosuite.utils.placement_samplers import UniformRandomSampler
 
-# Create environment
-# env = suite.make(
-    # env_name = "Stack",
-    # robots="Panda",
-    # has_renderer=True,
-    # has_offscreen_renderer=False,
-    # render_camera="agentview",
-    # ignore_done=True,
-    # use_camera_obs=False,
-    # reward_shaping=True,
-    # control_freq=20,
-    # hard_reset=False,
-# )
-
 class StackWithCustomRandomization(Stack):
+    def __init__(self, num_cubes=2, cube_colors=None, **kwargs):
+        self.num_cubes = num_cubes
+        self.cube_colors = cube_colors
+        self.cubes = []  # Will store cube objects
+        super().__init__(**kwargs)
+    
     def _load_model(self):
-        super()._load_model()
+        """
+        Loads an xml model, puts it in self.model
+        """
+        # Load manipulation environment (sets up robot)
+        from robosuite.environments.manipulation.manipulation_env import ManipulationEnv
+        ManipulationEnv._load_model(self)
+
+        # Adjust base pose accordingly
+        xpos = self.robots[0].robot_model.base_xpos_offset["table"](self.table_full_size[0])
+        self.robots[0].robot_model.set_base_xpos(xpos)
+
+        # Load arena (table)
+        mujoco_arena = TableArena(
+            table_full_size=self.table_full_size,
+            table_friction=self.table_friction,
+            table_offset=self.table_offset,
+        )
+
+        # Arena always gets set to zero origin
+        mujoco_arena.set_origin([0, 0, 0])
+
+        # Define default colors
+        if not self.cube_colors:
+            self.cube_colors = [
+                [1.0, 0.0, 0.0, 1.0],  # Red
+                [0.0, 1.0, 0.0, 1.0],  # Green  
+                [0.0, 0.0, 1.0, 1.0],  # Blue
+                [1.0, 1.0, 0.0, 1.0],  # Yellow
+                [1.0, 0.0, 1.0, 1.0],  # Magenta
+                [0.0, 1.0, 1.0, 1.0],  # Cyan
+                [1.0, 0.5, 0.0, 1.0],  # Orange
+                [0.5, 0.0, 1.0, 1.0],  # Purple
+                [0.5, 0.5, 0.5, 1.0],  # Gray
+                [0.8, 0.4, 0.2, 1.0],  # Brown
+            ]
+
+        # Create all cubes
+        self.cubes = []
+        for i in range(self.num_cubes):
+            cube_name = f"cube{chr(65 + i)}"  # cubeA, cubeB, cubeC, etc.
+            cube = BoxObject(
+                name=cube_name,
+                size=[0.02, 0.02, 0.02],
+                rgba=self.cube_colors[i % len(self.cube_colors)],
+                obj_type="all",
+                duplicate_collision_geoms=True,
+            )
+            self.cubes.append(cube)
         
-        # Get the objects from the existing placement initializer
-        existing_objects = self.placement_initializer.mujoco_objects
-        
-        # Replace with customized randomization
+        # Set cubeA and cubeB for compatibility with parent class
+        self.cubeA = self.cubes[0]
+        if len(self.cubes) > 1:
+            self.cubeB = self.cubes[1]
+
+        # Create placement initializer with custom randomization
         self.placement_initializer = UniformRandomSampler(
             name="ObjectSampler",
-            mujoco_objects=existing_objects,  # Use objects from parent
-            x_range=[-0.20, 0.20],  # Wider X range
-            y_range=[-0.20, 0.20],  # Wider Y range
-            rotation=(-np.pi/3, np.pi/3),  # Add rotation randomization
+            mujoco_objects=self.cubes,
+            x_range=[-0.20, 0.20],
+            y_range=[-0.20, 0.20],
+            rotation=(-np.pi/3, np.pi/3),
             rotation_axis='z',
             ensure_object_boundary_in_range=False,
             ensure_valid_placement=True,
@@ -52,8 +95,32 @@ class StackWithCustomRandomization(Stack):
             z_offset=0.01,
         )
 
-# Then replace your suite.make() call with:
+        # task includes arena, robot, and objects of interest
+        # Use ManipulationTask to properly combine everything
+        self.model = ManipulationTask(
+            mujoco_arena=mujoco_arena,
+            mujoco_robots=[robot.robot_model for robot in self.robots],
+            mujoco_objects=self.cubes,
+        )
+    
+    def _setup_references(self):
+        """
+        Sets up references to important components. A reference is typically an
+        index or a list of indices that point to the corresponding elements
+        in a flatten array, which is how MuJoCo stores physical simulation data.
+        """
+        super()._setup_references()
+
+        # Additional object references for all cubes
+        self.cube_body_ids = []
+        for cube in self.cubes:
+            body_id = self.sim.model.body_name2id(cube.root_body)
+            self.cube_body_ids.append(body_id)
+
+
+# Create environment with 5 cubes
 env = StackWithCustomRandomization(
+    num_cubes=5,  # Change this to add more or fewer cubes
     robots="Panda",
     has_renderer=True,
     has_offscreen_renderer=False,
@@ -137,12 +204,5 @@ while True:
                 all_prev_gripper_actions[device.active_robot][gripper_ac] = action_dict[gripper_ac]
                 env.step(env_action)
                 env.render()
-
-            # limit frame rate if necessary
-            # if args.max_fr is not None:
-                # elapsed = time.time() - start
-                # diff = 1 / args.max_fr - elapsed
-                # if diff > 0:
-                    # time.sleep(diff)
 
 env.close()

@@ -19,12 +19,20 @@ class MultiCubeLift(Lift):
         ]
 
         self.cubes = []
+        redwood = CustomMaterial(
+            texture="WoodRed",
+            tex_name="redwood",
+            mat_name="redwood_mat",
+            tex_attrib=tex_attrib,
+            mat_attrib=mat_attrib,
+        )
         for i, color in enumerate(colors):
             cube = BoxObject(
                 name=f"cube_{i}",
                 size_min=[0.02, 0.02, 0.02],
                 size_max=[0.02, 0.02, 0.02],
                 rgba=color,
+                material=redwood,
                 rng=self.rng,
             )
             self.cubes.append(cube)

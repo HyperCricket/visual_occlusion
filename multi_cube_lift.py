@@ -2,6 +2,7 @@ from robosuite.environments.manipulation.lift import Lift
 from robosuite.models.objects import BoxObject
 from robosuite.models.tasks import ManipulationTask
 from robosuite.utils.placement_samplers import UniformRandomSampler
+from robosuite.utils.mjcf_utils import CustomMaterial
 
 
 class MultiCubeLift(Lift):

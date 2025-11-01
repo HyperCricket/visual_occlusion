@@ -137,28 +137,6 @@ env = StackWithCustomRandomization(
 
 env.reset()
 
-# Randomize Joint Positions of Robot
-# robot = env.robots[0]
-# joint_ids = []
-# 
-# for joint_name in robot.robot_joints:
-    # try: 
-        # joint_id = env.sim.model.joint_name2id(joint_name)
-        # joint_ids.append(joint_id)
-    # except:
-        # continue
-# 
-# lower_limits = np.array([env.sim.model.jnt_range[jid][0] for jid in joint_ids])
-# upper_limits = np.array([env.sim.model.jnt_range[jid][1] for jid in joint_ids])
-# 
-# random_joints = np.random.uniform(low=lower_limits, high=upper_limits)
-# robot.set_robot_joint_positions(random_joints)
-# env.sim.forward()
-# 
-# cam_id = 0
-# num_cam = len(env.sim.model.camera_names)
-# env.render()
-
 # Wrap this environment in a visualization wrapper
 env = VisualizationWrapper(env, indicator_configs=None)
 

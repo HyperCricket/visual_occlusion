@@ -2,6 +2,9 @@
     This is the Python file for controlling the robot using the keyboard 
     In order to have I/O, you need to run this python file as the root user
     Example: sudo ~/venvs/mj/bin/python control.py
+
+    You also need to modify your X11 display server access control perms (before running the python file)
+    You can do so using this command:  xhost +local:
 """
 
 import time
@@ -118,9 +121,9 @@ class StackWithCustomRandomization(Stack):
             self.cube_body_ids.append(body_id)
 
 
-# Create environment with 5 cubes
+# Create environment with N cubes
 env = StackWithCustomRandomization(
-    num_cubes=5,  # Change this to add more or fewer cubes
+    num_cubes=10,  # Change this to add more or fewer cubes
     robots="Panda",
     has_renderer=True,
     has_offscreen_renderer=False,
@@ -133,6 +136,29 @@ env = StackWithCustomRandomization(
 )
 
 env.reset()
+
+# Randomize Joint Positions of Robot
+# robot = env.robots[0]
+# joint_ids = []
+# 
+# for joint_name in robot.robot_joints:
+    # try: 
+        # joint_id = env.sim.model.joint_name2id(joint_name)
+        # joint_ids.append(joint_id)
+    # except:
+        # continue
+# 
+# lower_limits = np.array([env.sim.model.jnt_range[jid][0] for jid in joint_ids])
+# upper_limits = np.array([env.sim.model.jnt_range[jid][1] for jid in joint_ids])
+# 
+# random_joints = np.random.uniform(low=lower_limits, high=upper_limits)
+# robot.set_robot_joint_positions(random_joints)
+# env.sim.forward()
+# 
+# cam_id = 0
+# num_cam = len(env.sim.model.camera_names)
+# env.render()
+
 # Wrap this environment in a visualization wrapper
 env = VisualizationWrapper(env, indicator_configs=None)
 
@@ -145,6 +171,26 @@ device = Keyboard(
 while True:
         # Reset the environment
         obs = env.reset()
+
+        robot = env.robots[0]
+
+        # Neutral pose with hand clearly over table center
+        neutral_joints = np.array([0, -0.3, 0, -2.0, 0, 1.7, 0.785])
+
+        # Randomize each joint with different amounts
+        # Keep shoulder joints (0,1,3,5) with less variation for visibility
+        noise = np.array([
+            np.random.uniform(-0.15, 0.15),  # Joint 0: base rotation (small)
+            np.random.uniform(-0.2, 0.2),    # Joint 1: shoulder
+            np.random.uniform(-0.3, 0.3),    # Joint 2: elbow (can move more)
+            np.random.uniform(-0.2, 0.2),    # Joint 3: elbow rotation
+            np.random.uniform(-0.3, 0.3),    # Joint 4: wrist (can move more)
+            np.random.uniform(-0.2, 0.2),    # Joint 5: wrist rotation
+            np.random.uniform(-0.3, 0.3),    # Joint 6: wrist twist
+        ])
+
+        robot.set_robot_joint_positions(neutral_joints + noise)
+        env.sim.forward()
 
         # Setup rendering
         cam_id = 0

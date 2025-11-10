@@ -112,11 +112,12 @@ class StackWithCustomRandomization(Stack):
 
 # Create environment with 5 cubes
 env = StackWithCustomRandomization(
-    num_cubes=5,  # Change this to add more or fewer cubes
+    num_cubes=10,  # Change this to add more or fewer cubes
     robots="Panda",
     has_renderer=True,
     has_offscreen_renderer=False,
-    render_camera="agentview",
+    # render_camera="agentview",
+    render_camera="frontview",
     ignore_done=True,
     use_camera_obs=False,
     reward_shaping=True,
@@ -151,145 +152,160 @@ print("Press 'Q' to reset and start a new demonstration")
 print("Each episode will be saved automatically")
 # ================================
 
-while True:
-    # Reset the environment
-    obs = env.reset()
-    
-    # RANDOMIZE JOINT POSITIONS (hand stays visible and near table center)
-    robot = env.robots[0]
-    
-    # Set to a good neutral hovering position that's visible
-    neutral_joints = np.array([0, -0.3, 0, -2.0, 0, 1.7, 0.785])
-    
-    # Add small random variations to each joint
-    noise = np.random.uniform(-0.2, 0.2, size=7)
-    
-    robot.set_robot_joint_positions(neutral_joints + noise)
-    env.sim.forward()
-    # END RANDOMIZATION
-    
-    # Setup rendering
-    cam_id = 0
-    num_cam = len(env.sim.model.camera_names)
-    env.render()
-    
-    # ==== START NEW DEMONSTRATION ====
-    demo_counter += 1
-    demo_group = hdf5_file.create_group(f"demo_{demo_counter}")
-
-    # Lists to store episode data
-    actions_list = []
-    observations_list = []
-    rewards_list = []
-    dones_list = []
-
-    # Store initial joint positions
-    demo_group.attrs['initial_joint_positions'] = neutral_joints + noise
-
-    # Define arm name
-    arm_name = 'right'
-
-    # Get end-effector site ID - use the grip site
-    eef_site_id = robot.sim.model.site_name2id('gripper0_right_grip_site')
-
-    # Get the body name for the quaternion
-    eef_body_name = 'robot0_right_hand'
-
-    print(f"\n=== Starting Demo {demo_counter} ===")
-    step_counter = 0
-    # =================================
-
-    # Initialize variables that should the maintained between resets
-    last_grasp = 0
-    
-    # Initialize device control
-    device.start_control()
-    all_prev_gripper_actions = [
-        {
-            f"{robot_arm}_gripper": np.repeat([0], robot.gripper[robot_arm].dof)
-            for robot_arm in robot.arms
-            if robot.gripper[robot_arm].dof > 0
-        }
-        for robot in env.robots
-    ]
-    
-    # Loop until we get a reset from the input or the task completes
+try:
     while True:
-        start = time.time()
-        # Set active robot
-        active_robot = env.robots[device.active_robot]
-        # Get the newest action
-        input_ac_dict = device.input2action()
-        # If action is none, then this a reset so we should break
-        if input_ac_dict is None:
-            break
-        from copy import deepcopy
-        action_dict = deepcopy(input_ac_dict)  # {}
-        # set arm actions
-        for arm in active_robot.arms:
-            if isinstance(active_robot.composite_controller, WholeBody):  # input type passed to joint_action_policy
-                controller_input_type = active_robot.composite_controller.joint_action_policy.input_type
-            else:
-                controller_input_type = active_robot.part_controllers[arm].input_type
-            if controller_input_type == "delta":
-                action_dict[arm] = input_ac_dict[f"{arm}_delta"]
-            elif controller_input_type == "absolute":
-                action_dict[arm] = input_ac_dict[f"{arm}_abs"]
-            else:
-                raise ValueError
-        # Maintain gripper state for each robot but only update the active robot with action
-        env_action = [robot.create_action_vector(all_prev_gripper_actions[i]) for i, robot in enumerate(env.robots)]
-        env_action[device.active_robot] = active_robot.create_action_vector(action_dict)
-        env_action = np.concatenate(env_action)
-        for gripper_ac in all_prev_gripper_actions[device.active_robot]:
-            all_prev_gripper_actions[device.active_robot][gripper_ac] = action_dict[gripper_ac]
+        # Reset the environment
+        obs = env.reset()
         
-        # Step environment
-        obs, reward, done, info = env.step(env_action)
+        # RANDOMIZE JOINT POSITIONS (hand stays visible and near table center)
+        robot = env.robots[0]
         
-        # ==== RECORD DATA ====
-        actions_list.append(env_action)
-
-        # Store relevant observations
-        obs_dict = {
-            'joint_pos': robot.sim.data.qpos[robot._ref_joint_pos_indexes].copy(),
-            'joint_vel': robot.sim.data.qvel[robot._ref_joint_vel_indexes].copy(),
-            'eef_pos': robot.sim.data.site_xpos[eef_site_id].copy(),
-            'eef_quat': robot.sim.data.get_body_xquat(eef_body_name).copy(),
-            'gripper_qpos': robot.sim.data.qpos[robot._ref_gripper_joint_pos_indexes[arm_name]].copy(),
-        }
-        observations_list.append(obs_dict)
-        rewards_list.append(reward)
-        dones_list.append(done)
-
-        step_counter += 1
-        # =====================
+        # Set to a good neutral hovering position that's visible
+        neutral_joints = np.array([0, -0.3, 0, -2.0, 0, 1.7, 0.785])
         
+        # Add small random variations to each joint
+        noise = np.random.uniform(-0.2, 0.2, size=7)
+        
+        robot.set_robot_joint_positions(neutral_joints + noise)
+        env.sim.forward()
+        # END RANDOMIZATION
+        
+        # Setup rendering
+        cam_id = 0
+        num_cam = len(env.sim.model.camera_names)
         env.render()
-    
-    # ==== SAVE DEMONSTRATION TO HDF5 ====
-    print(f"Demo {demo_counter} finished with {step_counter} steps. Saving...")
-    
-    # Save actions
-    demo_group.create_dataset('actions', data=np.array(actions_list))
-    
-    # Save observations (create subgroup for observations)
-    obs_group = demo_group.create_group('observations')
-    obs_group.create_dataset('joint_pos', data=np.array([o['joint_pos'] for o in observations_list]))
-    obs_group.create_dataset('joint_vel', data=np.array([o['joint_vel'] for o in observations_list]))
-    obs_group.create_dataset('eef_pos', data=np.array([o['eef_pos'] for o in observations_list]))
-    obs_group.create_dataset('eef_quat', data=np.array([o['eef_quat'] for o in observations_list]))
-    obs_group.create_dataset('gripper_qpos', data=np.array([o['gripper_qpos'] for o in observations_list]))
-    
-    # Save rewards and dones
-    demo_group.create_dataset('rewards', data=np.array(rewards_list))
-    demo_group.create_dataset('dones', data=np.array(dones_list))
-    
-    # Save metadata
-    demo_group.attrs['num_steps'] = step_counter
-    demo_group.attrs['total_reward'] = np.sum(rewards_list)
-    
-    print(f"Saved! Total reward: {np.sum(rewards_list):.2f}")
+        
+        # ==== START NEW DEMONSTRATION ====
+        demo_counter += 1
+        demo_group = hdf5_file.create_group(f"demo_{demo_counter}")
+
+        # Lists to store episode data
+        actions_list = []
+        observations_list = []
+        rewards_list = []
+        dones_list = []
+
+        # Store initial joint positions
+        demo_group.attrs['initial_joint_positions'] = neutral_joints + noise
+
+        # Define arm name
+        arm_name = 'right'
+
+        # Get end-effector site ID - use the grip site
+        eef_site_id = robot.sim.model.site_name2id('gripper0_right_grip_site')
+
+        # Get the body name for the quaternion
+        eef_body_name = 'robot0_right_hand'
+
+        print(f"\n=== Starting Demo {demo_counter} ===")
+        step_counter = 0
+        # =================================
+
+        # Initialize variables that should the maintained between resets
+        last_grasp = 0
+        
+        # Initialize device control
+        device.start_control()
+        all_prev_gripper_actions = [
+            {
+                f"{robot_arm}_gripper": np.repeat([0], robot.gripper[robot_arm].dof)
+                for robot_arm in robot.arms
+                if robot.gripper[robot_arm].dof > 0
+            }
+            for robot in env.robots
+        ]
+        
+        # Loop until we get a reset from the input or the task completes
+        while True:
+            start = time.time()
+            # Set active robot
+            active_robot = env.robots[device.active_robot]
+            # Get the newest action
+            input_ac_dict = device.input2action()
+            # If action is none, then this a reset so we should break
+            if input_ac_dict is None:
+                break
+            from copy import deepcopy
+            action_dict = deepcopy(input_ac_dict)  # {}
+            # set arm actions
+            for arm in active_robot.arms:
+                if isinstance(active_robot.composite_controller, WholeBody):  # input type passed to joint_action_policy
+                    controller_input_type = active_robot.composite_controller.joint_action_policy.input_type
+                else:
+                    controller_input_type = active_robot.part_controllers[arm].input_type
+                if controller_input_type == "delta":
+                    action_dict[arm] = input_ac_dict[f"{arm}_delta"]
+                elif controller_input_type == "absolute":
+                    action_dict[arm] = input_ac_dict[f"{arm}_abs"]
+                else:
+                    raise ValueError
+            # Maintain gripper state for each robot but only update the active robot with action
+            env_action = [robot.create_action_vector(all_prev_gripper_actions[i]) for i, robot in enumerate(env.robots)]
+            env_action[device.active_robot] = active_robot.create_action_vector(action_dict)
+            env_action = np.concatenate(env_action)
+            for gripper_ac in all_prev_gripper_actions[device.active_robot]:
+                all_prev_gripper_actions[device.active_robot][gripper_ac] = action_dict[gripper_ac]
+            
+            # Step environment
+            obs, reward, done, info = env.step(env_action)
+            
+            # ==== RECORD DATA ====
+            actions_list.append(env_action)
+
+            # Store relevant observations
+            obs_dict = {
+                'joint_pos': robot.sim.data.qpos[robot._ref_joint_pos_indexes].copy(),
+                'joint_vel': robot.sim.data.qvel[robot._ref_joint_vel_indexes].copy(),
+                'eef_pos': robot.sim.data.site_xpos[eef_site_id].copy(),
+                'eef_quat': robot.sim.data.get_body_xquat(eef_body_name).copy(),
+                'gripper_qpos': robot.sim.data.qpos[robot._ref_gripper_joint_pos_indexes[arm_name]].copy(),
+            }
+            observations_list.append(obs_dict)
+            rewards_list.append(reward)
+            dones_list.append(done)
+
+            step_counter += 1
+            # =====================
+            
+            env.render()
+        
+        # ==== SAVE DEMONSTRATION TO HDF5 ====
+        print(f"Demo {demo_counter} finished with {step_counter} steps. Saving...")
+        
+        # Save actions
+        demo_group.create_dataset('actions', data=np.array(actions_list))
+        
+        # Save observations (create subgroup for observations)
+        obs_group = demo_group.create_group('observations')
+        obs_group.create_dataset('joint_pos', data=np.array([o['joint_pos'] for o in observations_list]))
+        obs_group.create_dataset('joint_vel', data=np.array([o['joint_vel'] for o in observations_list]))
+        obs_group.create_dataset('eef_pos', data=np.array([o['eef_pos'] for o in observations_list]))
+        obs_group.create_dataset('eef_quat', data=np.array([o['eef_quat'] for o in observations_list]))
+        obs_group.create_dataset('gripper_qpos', data=np.array([o['gripper_qpos'] for o in observations_list]))
+        
+        # Save rewards and dones
+        demo_group.create_dataset('rewards', data=np.array(rewards_list))
+        demo_group.create_dataset('dones', data=np.array(dones_list))
+        
+        # Save metadata
+        demo_group.attrs['num_steps'] = step_counter
+        demo_group.attrs['total_reward'] = np.sum(rewards_list)
+        
+        print(f"Saved! Total reward: {np.sum(rewards_list):.2f}")
+        
+        # Flush to disk for safety
+        hdf5_file.flush()
+
+except KeyboardInterrupt:
+    print("\nKeyboardInterrupt detected -- stopping gracefully...")
+
+
+finally:
+    # Ensure cleanup no matter how program ends
+    hdf5_file.close()
+    env.close()
+    print(f"\nAll demonstrations saved to: {hdf5_filename}")
+    print("Environment closed cleanly.")
     # ====================================
 
 # Close HDF5 file when done (this won't run until you exit the program)

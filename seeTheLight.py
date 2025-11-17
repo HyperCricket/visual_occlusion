@@ -16,12 +16,18 @@ env = suite.make(
     control_freq=20,
 )
 
-with h5py.File(path, "r") as f:
-    demo = f["demo_1"]
-    actions = demo["actions"][:]
 
 # Wrap env to visualize each step
 env = VisualizationWrapper(env)
 
-for a in actions:
-    env.step(a)
+
+with h5py.File(path, "r") as f:
+    demo_names = [k for k in f.keys() if "demo" in k]
+
+    for name in demo_names:
+        print("Replaying:", name)
+        actions = f[f"{name}/actions"][:]
+
+        env.reset()
+        for a in actions:
+            env.step(a)

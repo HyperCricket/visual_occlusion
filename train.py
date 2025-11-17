@@ -288,7 +288,7 @@ class DiffusionTrainer:
         # Save final model parameters (EMA-averaged)
         ema.copy_to(model.parameters())
         torch.save(model.state_dict(), self.save_file)
-        print(f"\n✅ Training complete — EMA model saved to {self.save_file}")
+        print(f"\n Training complete — EMA model saved to {self.save_file}")
         print(f"   Minimum epoch loss: {min_loss:.6f} at epoch {min_epoch}")
 
         return model

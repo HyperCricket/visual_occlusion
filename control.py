@@ -111,9 +111,9 @@ class StackWithCustomRandomization(Stack):
 
 
 def main():
-    # Create environment with 5 cubes
+    # Create environment with 10 cubes
     env = StackWithCustomRandomization(
-        num_cubes=10,  # Change this to add more or fewer cubes
+        num_cubes=2,  # Change this to add more or fewer cubes
         robots="Panda",
         has_renderer=True,
         has_offscreen_renderer=False,
@@ -122,7 +122,7 @@ def main():
         ignore_done=True,
         use_camera_obs=False,
         reward_shaping=True,
-        control_freq=20,
+        control_freq=15,
         hard_reset=False,
     )
     env.reset()
@@ -132,8 +132,8 @@ def main():
 
     device = Keyboard(
         env=env,
-        pos_sensitivity=15,
-        rot_sensitivity=15
+        pos_sensitivity=8,
+        rot_sensitivity=8
     )
 
     # ==== DATA COLLECTION SETUP ====
@@ -145,7 +145,7 @@ def main():
     # Metadata
     hdf5_file.attrs['date'] = timestamp
     hdf5_file.attrs['env_name'] = 'StackWithCustomRandomization'
-    hdf5_file.attrs['num_cubes'] = 5
+    hdf5_file.attrs['num_cubes'] = 2 
 
     demo_counter = 0
     print(f"Recording demonstrations to: {hdf5_filename}")
@@ -249,28 +249,39 @@ def main():
                 
                 # Step environment
                 obs, reward, done, info = env.step(env_action)
-                
-                # ==== RECORD DATA ====
                 actions_list.append(env_action)
 
-                # Store relevant observations
-                obs_dict = {
-                    'joint_pos': robot.sim.data.qpos[robot._ref_joint_pos_indexes].copy(),
-                    'joint_vel': robot.sim.data.qvel[robot._ref_joint_vel_indexes].copy(),
-                    'eef_pos': robot.sim.data.site_xpos[eef_site_id].copy(),
-                    'eef_quat': robot.sim.data.get_body_xquat(eef_body_name).copy(),
-                    'gripper_qpos': robot.sim.data.qpos[robot._ref_gripper_joint_pos_indexes[arm_name]].copy(),
+                # print("env_action shape:", env_action.shape)
+
+                obs_to_save = {
+                    "robot0_joint_pos": obs["robot0_joint_pos"],
+                    "robot0_joint_vel": obs["robot0_joint_vel"],
+                    "robot0_gripper_qpos": obs["robot0_gripper_qpos"],
+                    "robot0_eef_pos": obs["robot0_eef_pos"],
+                    "robot0_eef_quat": obs["robot0_eef_quat"],
+                    "cubeA_pos": obs["cubeA_pos"],
+                    "cubeA_quat": obs["cubeA_quat"],
+                    "cubeB_pos": obs["cubeB_pos"],
+                    "cubeB_quat": obs["cubeB_quat"],
+                    "gripper_to_cubeA": obs["gripper_to_cubeA"],
+                    "gripper_to_cubeB": obs["gripper_to_cubeB"],
+                    # or just obs["object-state"] if you want the bundled one
                 }
-                observations_list.append(obs_dict)
+                observations_list.append(obs_to_save)
                 rewards_list.append(reward)
                 dones_list.append(done)
 
-                step_counter += 1
                 # =====================
-                
+                step_counter += 1
+
                 env.render()
             
             # ==== SAVE DEMONSTRATION TO HDF5 ====
+            # print("num obs:", len(observations_list))
+            # print("num actions:", len(actions_list))
+            # if len(actions_list) > 0:
+                # print("first action shape:", actions_list[0].shape)
+
             print(f"Demo {demo_counter} finished with {step_counter} steps. Saving...")
             
             # Save actions
@@ -278,12 +289,55 @@ def main():
             
             # Save observations (create subgroup for observations)
             obs_group = demo_group.create_group('observations')
-            obs_group.create_dataset('joint_pos', data=np.array([o['joint_pos'] for o in observations_list]))
-            obs_group.create_dataset('joint_vel', data=np.array([o['joint_vel'] for o in observations_list]))
-            obs_group.create_dataset('eef_pos', data=np.array([o['eef_pos'] for o in observations_list]))
-            obs_group.create_dataset('eef_quat', data=np.array([o['eef_quat'] for o in observations_list]))
-            obs_group.create_dataset('gripper_qpos', data=np.array([o['gripper_qpos'] for o in observations_list]))
-            
+
+            obs_group.create_dataset(
+                'robot0_joint_pos',
+                data=np.array([o['robot0_joint_pos'] for o in observations_list])
+            )
+            obs_group.create_dataset(
+                'robot0_joint_vel',
+                data=np.array([o['robot0_joint_vel'] for o in observations_list])
+            )
+            obs_group.create_dataset(
+                'robot0_gripper_qpos',
+                data=np.array([o['robot0_gripper_qpos'] for o in observations_list])
+            )
+
+            obs_group.create_dataset(
+                'robot0_eef_pos',
+                data=np.array([o['robot0_eef_pos'] for o in observations_list])
+            )
+            obs_group.create_dataset(
+                'robot0_eef_quat',
+                data=np.array([o['robot0_eef_quat'] for o in observations_list])
+            )
+
+            obs_group.create_dataset(
+                'cubeA_pos',
+                data=np.array([o['cubeA_pos'] for o in observations_list])
+            )
+            obs_group.create_dataset(
+                'cubeA_quat',
+                data=np.array([o['cubeA_quat'] for o in observations_list])
+            )
+            obs_group.create_dataset(
+                'cubeB_pos',
+                data=np.array([o['cubeB_pos'] for o in observations_list])
+            )
+            obs_group.create_dataset(
+                'cubeB_quat',
+                data=np.array([o['cubeB_quat'] for o in observations_list])
+            )
+
+            obs_group.create_dataset(
+                'gripper_to_cubeA',
+                data=np.array([o['gripper_to_cubeA'] for o in observations_list])
+            )
+            obs_group.create_dataset(
+                'gripper_to_cubeB',
+                data=np.array([o['gripper_to_cubeB'] for o in observations_list])
+            )
+
             # Save rewards and dones
             demo_group.create_dataset('rewards', data=np.array(rewards_list))
             demo_group.create_dataset('dones', data=np.array(dones_list))

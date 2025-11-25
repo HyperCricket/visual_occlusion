@@ -3,13 +3,14 @@ from robosuite.wrappers import VisualizationWrapper
 import h5py
 
 # Path to your robosuite demo file
-path = "demo_1.hdf5"
+path = "demonstrations_20251110_162100.hdf5"
 
 # Launch a robosuite viewer that replays the demonstration
 env = suite.make(
     "Lift",
+    robots = "Panda",
     has_renderer=True,
-    has_offscreen_renderer=False,
+    has_offscreen_renderer=True,
     use_camera_obs=True,
     ignore_done=True,
     reward_shaping=True,

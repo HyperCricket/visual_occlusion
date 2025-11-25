@@ -46,7 +46,7 @@ class RobotHDF5Dataset(Dataset):
                     self.indices.append((demo_key, t, t + obs_horizon))
 
         # Observation dimension per timestep: joint_pos(7) + joint_vel(7) + gripper_qpos(2) = 16
-        self.obs_dim = 16
+        self.obs_dim = 28 
         self.action_dim = 7
 
     def __len__(self) -> int:
@@ -57,25 +57,28 @@ class RobotHDF5Dataset(Dataset):
         with h5py.File(self.file_path, "r") as f:
             actions = np.array(f[f"{demo_key}/actions"][start:end])  # (H, 7)
 
-            joint_pos = np.array(f[f"{demo_key}/observations/joint_pos"][start:end])      # (H, 7)
-            joint_vel = np.array(f[f"{demo_key}/observations/joint_vel"][start:end])      # (H, 7)
-            gripper_qpos = np.array(f[f"{demo_key}/observations/gripper_qpos"][start:end])# (H, 2)
+            joint_pos = np.array(f[f"{demo_key}/observations/robot0_joint_pos"][start:end])        # (H, 7)
+            joint_vel = np.array(f[f"{demo_key}/observations/robot0_joint_vel"][start:end])        # (H, 7)
+            gripper_qpos = np.array(f[f"{demo_key}/observations/robot0_gripper_qpos"][start:end])  # (H, 2)
 
-            # Combine into single vector per timestep: (H, 16)
-            obs_seq = np.concatenate([joint_pos, joint_vel, gripper_qpos], axis=-1)
+            cubeA_pos = np.array(f[f"{demo_key}/observations/cubeA_pos"][start:end])               # (H, 3)
+            cubeB_pos = np.array(f[f"{demo_key}/observations/cubeB_pos"][start:end])               # (H, 3)
+            gripper_to_cubeA = np.array(f[f"{demo_key}/observations/gripper_to_cubeA"][start:end]) # (H, 3)
+            gripper_to_cubeB = np.array(f[f"{demo_key}/observations/gripper_to_cubeB"][start:end]) # (H, 3)
 
-        # Flatten sequence: (H, 16) -> (H*16,)
+            obs_seq = np.concatenate(
+                [joint_pos, joint_vel, gripper_qpos,
+                 cubeA_pos, cubeB_pos,
+                 gripper_to_cubeA, gripper_to_cubeB],
+                axis=-1
+            )
+
         obs_flat = obs_seq.flatten().astype(np.float32)
-
-        # For now, we predict ONLY the last action in the window: shape (7,)
         action_last = actions[-1].astype(np.float32)
 
-        obs_tensor = torch.from_numpy(obs_flat)       # (obs_horizon * 16,)
-        action_tensor = torch.from_numpy(action_last) # (7,)
-
         return {
-            "obs": obs_tensor,
-            "action": action_tensor
+            "obs": torch.from_numpy(obs_flat),
+            "action": torch.from_numpy(action_last),
         }
 
 
@@ -181,7 +184,7 @@ class DiffusionTrainer:
         self.save_file = save_file
 
         # From dataset definition
-        self.obs_dim = 16   # per timestep
+        self.obs_dim = 28 # per timestep
         self.action_dim = 7 # per action
 
     def get_dataloader(self) -> DataLoader:
@@ -303,7 +306,7 @@ if __name__ == "__main__":
     print(f"Using device: {device}")
 
     trainer = DiffusionTrainer(
-        hdf5_path="demonstrations_20251110_162100.hdf5",
+        hdf5_path="demonstrations_20251124_211825.hdf5",
         obs_horizon=16,
         batch_size=32,
         device=device,

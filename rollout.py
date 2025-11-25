@@ -92,22 +92,21 @@ print("Using device:", device)
 # ============================================================
 
 def get_obs_vector(env, robot, arm_name="right"):
+def get_obs_vector(obs):
     """
-     Build the *low-dimensional* observation vector we trained on:
- 
-        [joint_pos(7), joint_vel(7), gripper_qpos(2)]  -> 16 dims
- 
-    If your HDF5 demos stored something else, adjust this to match!
+    Build the per-timestep observation vector from the env obs dict.
+    MUST match what train.py concatenates, in the same order.
     """
-    # Joint positions / velocities
-    joint_pos = robot.sim.data.qpos[robot._ref_joint_pos_indexes].copy()          # (7,)
-    joint_vel = robot.sim.data.qvel[robot._ref_joint_vel_indexes].copy()          # (7,)
- 
-    # Gripper qpos: robosuite stores indices per arm in a dict
-    gripper_qpos = robot.sim.data.qpos[robot._ref_gripper_joint_pos_indexes[arm_name]].copy()  # (2,)
- 
-    obs_vec = np.concatenate([joint_pos, joint_vel, gripper_qpos], axis=0)       # (16,)
-    return obs_vec
+    return np.concatenate([
+        obs["robot0_joint_pos"],        # (7,)
+        obs["robot0_joint_vel"],        # (7,)
+        obs["robot0_gripper_qpos"],     # (2,)
+
+        obs["cubeA_pos"],               # (3,)
+        obs["cubeB_pos"],               # (3,)
+        obs["gripper_to_cubeA"],        # (3,)
+        obs["gripper_to_cubeB"],        # (3,)
+    ]).astype(np.float32)
  
 # ============================================================
 # Environment creation
@@ -118,7 +117,7 @@ def make_env():
     Create the same environment configuration you used for data collection.
     """
     env = StackWithCustomRandomization(
-        num_cubes=10,
+        num_cubes=2,
         robots="Panda",
         has_renderer=True,
         has_offscreen_renderer=False,
@@ -126,7 +125,7 @@ def make_env():
         ignore_done=True,      # set to False if you want episodes to actually end
         use_camera_obs=False,
         reward_shaping=True,
-        control_freq=20,
+        control_freq=15,
         hard_reset=False,
     )
     env = VisualizationWrapper(env, indicator_configs=None)
@@ -229,17 +228,18 @@ def run_policy_rollout(model, scheduler, num_episodes=3, max_steps=300):
     try:
         for ep in range(num_episodes):
             obs = env.reset()
+            print("obs keys at reset:", obs.keys())
 
             # Same neutral pose as in data collection (tweak as needed)
-            neutral_joints = np.array([0, -0.3, 0, -2.0, 0, 1.7, 0.785])
-            noise = np.random.uniform(-0.2, 0.2, size=7)
-            robot.set_robot_joint_positions(neutral_joints + noise)
-            env.sim.forward()
+            # neutral_joints = np.array([0, -0.3, 0, -2.0, 0, 1.7, 0.785])
+            # noise = np.random.uniform(-0.2, 0.2, size=7)
+            # robot.set_robot_joint_positions(neutral_joints + noise)
+            # env.sim.forward()
 
             print(f"\n=== Episode {ep + 1} ===")
 
             # Initial obs
-            obs_vec = get_obs_vector(env, robot, arm_name="right")
+            obs_vec = get_obs_vector(obs)
             obs_history = [obs_vec]
 
             for t in range(max_steps):
@@ -253,14 +253,14 @@ def run_policy_rollout(model, scheduler, num_episodes=3, max_steps=300):
                     device=device
                 )
 
-                print(action_np.shape)
+                # print(action_np.shape)
 
                 # Step environment
                 obs, reward, done, info = env.step(action_np)
                 env.render()
 
                 # Update observation history
-                obs_vec = get_obs_vector(env, robot, arm_name="right")
+                obs_vec = get_obs_vector(obs)
                 obs_history.append(obs_vec)
 
                 if not env.ignore_done and done:

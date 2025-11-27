@@ -91,7 +91,7 @@ print("Using device:", device)
 # Observation helper (low-dim, matches our training)
 # ============================================================
 
-def get_obs_vector(env, robot, arm_name="right"):
+# def get_obs_vector(env, robot, arm_name="right"):
 def get_obs_vector(obs):
     """
     Build the per-timestep observation vector from the env obs dict.
@@ -101,7 +101,6 @@ def get_obs_vector(obs):
         obs["robot0_joint_pos"],        # (7,)
         obs["robot0_joint_vel"],        # (7,)
         obs["robot0_gripper_qpos"],     # (2,)
-
         obs["cubeA_pos"],               # (3,)
         obs["cubeB_pos"],               # (3,)
         obs["gripper_to_cubeA"],        # (3,)
@@ -135,11 +134,11 @@ def make_env():
 # Loading the trained diffusion policy
 # ============================================================
 
-OBS_DIM = 16           # per timestep: 7+7+2
+OBS_DIM = 28    # per timestep: 7+7+2
 ACTION_DIM = 7
 OBS_HORIZON = 16
 NUM_DIFFUSION_ITERS = 1000
-MODEL_PATH = "diffusion_policy_robot.pth"   # change if you used a different filename
+MODEL_PATH = "diffusion_policy_robot_28obs.pth"   # change if you used a different filename
 
 def load_diffusion_policy(path=MODEL_PATH, device=device):
     """

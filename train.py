@@ -173,7 +173,7 @@ class DiffusionTrainer:
         device: str = "cpu",
         learning_rate: float = 1e-4,
         num_diffusion_iters: int = 1000,
-        save_file: str = "diffusion_policy.pth"
+        save_file: str = "diffusion_policy_robot_28obs.pth"
     ):
         self.hdf5_path = hdf5_path
         self.obs_horizon = obs_horizon
@@ -306,13 +306,13 @@ if __name__ == "__main__":
     print(f"Using device: {device}")
 
     trainer = DiffusionTrainer(
-        hdf5_path="demonstrations_20251124_211825.hdf5",
+        hdf5_path="demonstrations_20251126_225141.hdf5",
         obs_horizon=16,
         batch_size=32,
         device=device,
         learning_rate=1e-4,
         num_diffusion_iters=1000,
-        save_file="diffusion_policy_robot.pth"
+        save_file="diffusion_policy_robot_28obs.pth"
     )
 
     model = trainer.train(num_epochs=20, print_stats=True)

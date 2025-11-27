@@ -1,7 +1,7 @@
 import h5py
 import numpy as np
 
-path = "demonstrations_20251124_211825.hdf5"  # change to your NEW file name
+path = "demonstrations_20251126_182931.hdf5"  # change to your NEW file name
 with h5py.File(path, "r") as f:
     print("Top-level keys:", list(f.keys())[:5])
     demo0 = [k for k in f.keys() if k.startswith("demo_")][0]

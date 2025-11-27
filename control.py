@@ -1,5 +1,5 @@
 """ 
-    This is the Python file for controlling the robot using the keyboard 
+    This is the Python file for controlling the robot using the keyboard, used to collect demonstrations in HDF5 format.
     In order to have I/O, you need to run this python file as the root user
     Example: sudo ~/venvs/mj/bin/python control.py
 """

@@ -169,6 +169,7 @@ def main():
             
             robot.set_robot_joint_positions(neutral_joints + noise)
             env.sim.forward()
+            obs = env._get_observations()
             # END RANDOMIZATION
             
             # Setup rendering

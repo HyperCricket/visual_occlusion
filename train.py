@@ -24,7 +24,7 @@ class RobotHDF5Dataset(Dataset):
 
     Each sample:
       - obs: flattened sequence of observations over obs_horizon
-              (joint_pos, joint_vel, gripper_qpos)
+              (joint_pos, joint_vel, gripper_qpos, cubeA/B info, etc., + phase)
       - action: the action at the final timestep in that window (7-dim)
     """
     def __init__(self, file_path: str, obs_horizon: int = 16):
@@ -42,23 +42,45 @@ class RobotHDF5Dataset(Dataset):
                 actions = np.array(f[f"{demo_key}/actions"])  # (T, 7)
                 T = actions.shape[0]
 
-                # joint motion norm, ignore gripper (dim 6)
                 joint_norms = np.linalg.norm(actions[:, :6], axis=-1)
 
-                for t in range(T - obs_horizon):
-                    last_idx = t + obs_horizon - 1
+                g2A_all = np.array(f[f"{demo_key}/observations/gripper_to_cubeA"])  # (T, 3)
+                grq_all = np.array(f[f"{demo_key}/observations/robot0_gripper_qpos"])  # (T, 2)
+
+                for t in range(T - self.obs_horizon):
+                    last_idx = t + self.obs_horizon - 1
+                    base_tuple = (demo_key, t, t + self.obs_horizon)
+
                     m = joint_norms[last_idx]
 
-                    # keep all big moves
-                    if m > 0.1:
-                        self.indices.append((demo_key, t, t + obs_horizon))
-                    else:
-                        # keep some small ones with lower probability
-                        if np.random.rand() < 0.1:
-                            self.indices.append((demo_key, t, t + obs_horizon))
+                    # keep most moving windows + some small ones
+                    if m > 0.05 or np.random.rand() < 0.2:
+                        self.indices.append(base_tuple)
 
-        # Observation dimension per timestep: joint_pos(7) + joint_vel(7) + gripper_qpos(2) = 16
-        self.obs_dim = 28 
+                    # ---- extra boost for good grasp states ----
+                    g2A = g2A_all[last_idx]
+                    dist_to_A = np.linalg.norm(g2A)
+                    grq = grq_all[last_idx]
+                    gripper_closed = float(grq.mean() > 0.01)    # adjust sign if needed
+                    eef_above_A = float((-g2A[2]) > 0.03)
+
+                    # close, closed, above → add this window again (or more than once)
+                    if dist_to_A < 0.05 and gripper_closed > 0.5 and eef_above_A > 0.5:
+                        self.indices.append(base_tuple)
+                        # could even:
+                        # self.indices.extend([base_tuple] * 2)
+
+        # Observation dimension per timestep:
+        #   7 (joint_pos)
+        # + 7 (joint_vel)
+        # + 2 (gripper_qpos)
+        # + 3 (cubeA_pos)
+        # + 3 (cubeB_pos)
+        # + 3 (gripper_to_cubeA)
+        # + 3 (gripper_to_cubeB)
+        # + 1 (phase scalar)
+        # = 29
+        self.obs_dim = 29
         self.action_dim = 7
 
     def __len__(self) -> int:
@@ -78,14 +100,61 @@ class RobotHDF5Dataset(Dataset):
             gripper_to_cubeA = np.array(f[f"{demo_key}/observations/gripper_to_cubeA"][start:end]) # (H, 3)
             gripper_to_cubeB = np.array(f[f"{demo_key}/observations/gripper_to_cubeB"][start:end]) # (H, 3)
 
+            # Base obs sequence (H, 28)
             obs_seq = np.concatenate(
-                [joint_pos, joint_vel, gripper_qpos,
-                 cubeA_pos, cubeB_pos,
-                 gripper_to_cubeA, gripper_to_cubeB],
-                axis=-1
+                [
+                    joint_pos,
+                    joint_vel,
+                    gripper_qpos,
+                    cubeA_pos,
+                    cubeB_pos,
+                    gripper_to_cubeA,
+                    gripper_to_cubeB,
+                ],
+                axis=-1,
             )
 
-        obs_flat = obs_seq.flatten().astype(np.float32)
+        # ---- Heuristic phase scalar (same for all steps in this window) ----
+        # We'll derive a "phase" from the last timestep in the window:
+        #   phase = 0.0 : approach cubeA (far)
+        #   phase = 1.0 : near cubeA with gripper open (align / close)
+        #   phase = 2.0 : near cubeA with gripper closed and above it (lift)
+        last = obs_seq[-1]  # shape (28,)
+
+        # Unpack last-step fields (must match obs_seq concatenation order)
+        last_joint_pos = last[0:7]
+        last_joint_vel = last[7:14]
+        last_gripper_qpos = last[14:16]
+        last_cubeA_pos = last[16:19]
+        last_cubeB_pos = last[19:22]
+        last_g2A = last[22:25]
+        last_g2B = last[25:28]
+
+        dist_to_A = np.linalg.norm(last_g2A) + 1e-8  # avoid any divide-by-zero weirdness
+        # Rough estimate: gripper closed if fingers are somewhat inwards
+        gripper_closed = float(last_gripper_qpos.mean() > 0.01)
+
+        # Height of end-effector relative to cubeA:
+        # g2A = cubeA_pos - eef_pos  =>  eef_pos = cubeA_pos - g2A
+        # So vertical offset = eef_z - cubeA_z = (-g2A_z)
+        eef_above_A = float((-last_g2A[2]) > 0.03)  # > 3cm above cube
+
+        phase = 0.0  # default: approach
+        if dist_to_A < 0.10 and gripper_closed < 0.5:
+            # Near cubeA, gripper open -> align/close
+            phase = 1.0
+        if dist_to_A < 0.08 and gripper_closed > 0.5 and eef_above_A > 0.5:
+            # Close to cubeA, gripper closed, above cube -> lifting
+            phase = 2.0
+
+        # Broadcast the scalar to all timesteps for this window
+        phase_vec = np.full((self.obs_horizon, 1), phase, dtype=np.float32)
+
+        # Append phase to obs_seq: now (H, 29)
+        obs_seq_with_phase = np.concatenate([obs_seq, phase_vec], axis=-1)
+
+        # Flatten all timesteps into a single obs vector
+        obs_flat = obs_seq_with_phase.flatten().astype(np.float32)
         action_last = actions[-1].astype(np.float32)
 
         return {
@@ -133,7 +202,7 @@ class ConditionalUnet1D(nn.Module):
             nn.ReLU(),
             nn.Linear(256, 256),
             nn.ReLU(),
-            nn.Linear(256, action_dim)
+            nn.Linear(256, action_dim),
         )
 
     def timestep_embedding(self, timesteps: torch.Tensor, dim: int) -> torch.Tensor:
@@ -185,7 +254,7 @@ class DiffusionTrainer:
         device: str = "cpu",
         learning_rate: float = 1e-4,
         num_diffusion_iters: int = 1000,
-        save_file: str = "diffusion_policy_robot_28obs_new.pth"
+        save_file: str = "diffusion_policy_robot_29obs_phase.pth",
     ):
         self.hdf5_path = hdf5_path
         self.obs_horizon = obs_horizon
@@ -195,9 +264,9 @@ class DiffusionTrainer:
         self.num_diffusion_iters = num_diffusion_iters
         self.save_file = save_file
 
-        # From dataset definition
-        self.obs_dim = 28 # per timestep
-        self.action_dim = 7 # per action
+        # From dataset definition (must match RobotHDF5Dataset)
+        self.obs_dim = 29  # per timestep (28 base features + 1 phase)
+        self.action_dim = 7  # per action
 
     def get_dataloader(self) -> DataLoader:
         dataset = RobotHDF5Dataset(self.hdf5_path, obs_horizon=self.obs_horizon)
@@ -208,12 +277,12 @@ class DiffusionTrainer:
         model = ConditionalUnet1D(
             obs_dim=self.obs_dim,
             action_dim=self.action_dim,
-            horizon=self.obs_horizon
+            horizon=self.obs_horizon,
         ).to(self.device)
 
         ema = EMAModel(
             parameters=model.parameters(),
-            power=0.75
+            power=0.75,
         )
         return model, ema
 
@@ -222,7 +291,7 @@ class DiffusionTrainer:
             num_train_timesteps=self.num_diffusion_iters,
             beta_schedule="squaredcos_cap_v2",
             clip_sample=True,
-            prediction_type="epsilon"
+            prediction_type="epsilon",
         )
 
     def train(self, num_epochs: int = 20, print_stats: bool = True):
@@ -233,14 +302,14 @@ class DiffusionTrainer:
         optimizer = optim.AdamW(
             params=model.parameters(),
             lr=self.lr,
-            weight_decay=1e-6
+            weight_decay=1e-6,
         )
 
         lr_scheduler = get_scheduler(
             name="cosine",
             optimizer=optimizer,
             num_warmup_steps=500,
-            num_training_steps=len(dataloader) * num_epochs
+            num_training_steps=len(dataloader) * num_epochs,
         )
 
         min_loss = float("inf")
@@ -264,30 +333,28 @@ class DiffusionTrainer:
                     0,
                     noise_scheduler.config.num_train_timesteps,
                     (B,),
-                    device=self.device
+                    device=self.device,
                 ).long()
 
                 # Add noise to actions according to the diffusion schedule
                 noisy_action = noise_scheduler.add_noise(
                     original_samples=action,
                     noise=noise,
-                    timesteps=timesteps
+                    timesteps=timesteps,
                 )
 
                 # Predict the noise
                 noise_pred = model(
                     x=noisy_action,
                     timesteps=timesteps,
-                    obs_cond=obs
+                    obs_cond=obs,
                 )
 
-                # Diffusion loss: MSE between predicted and true noise
-                # loss = nn.functional.mse_loss(noise_pred, noise)
-
-                weight = torch.ones_like(noise)
-                weight[:, 6] = 0.2
-
-                loss = ((weight * (noise_pred - noise) ** 2).mean())
+                # Weighted MSE: down-weight gripper dim
+                # weight = torch.ones_like(noise)
+                # weight[:, 6] = 0.2
+                # loss = (weight * (noise_pred - noise) ** 2).mean()
+                loss = nn.functional.mse_loss(noise_pred, noise)
 
                 optimizer.zero_grad()
                 loss.backward()
@@ -329,7 +396,7 @@ if __name__ == "__main__":
         device=device,
         learning_rate=1e-4,
         num_diffusion_iters=1000,
-        save_file="diffusion_policy_robot_28obs_new.pth"
+        save_file="diffusion_policy_robot_29obs_phase.pth",
     )
 
     model = trainer.train(num_epochs=20, print_stats=True)

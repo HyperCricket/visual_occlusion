@@ -138,7 +138,7 @@ OBS_DIM = 28    # per timestep: 7+7+2
 ACTION_DIM = 7
 OBS_HORIZON = 16
 NUM_DIFFUSION_ITERS = 1000
-MODEL_PATH = "diffusion_policy_robot_28obs.pth"   # change if you used a different filename
+MODEL_PATH = "diffusion_policy_robot_28obs_new.pth"   # change if you used a different filename
 
 def load_diffusion_policy(path=MODEL_PATH, device=device):
     """
@@ -255,7 +255,12 @@ def run_policy_rollout(model, scheduler, num_episodes=3, max_steps=300):
                 # print(action_np.shape)
 
                 # Step environment
-                obs, reward, done, info = env.step(action_np)
+                print("rollout action:", action_np, "norm:", np.linalg.norm(action_np))
+                # obs, reward, done, info = env.step(action_np)
+                SCALE = 0.3  # try 0.3–0.5, tweak by feel
+                env_action = np.clip(action_np * SCALE, -1.0, 1.0)
+                obs, reward, done, info = env.step(env_action)
+
                 env.render()
 
                 # Update observation history

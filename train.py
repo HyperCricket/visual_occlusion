@@ -34,16 +34,28 @@ class RobotHDF5Dataset(Dataset):
 
         with h5py.File(self.file_path, "r") as f:
             for demo_key in f.keys():
-                # Only load valid demo groups
                 if not demo_key.startswith("demo_"):
                     continue
                 if f"{demo_key}/actions" not in f:
                     continue
 
-                T = f[f"{demo_key}/actions"].shape[0]
-                # We take windows of length obs_horizon, last action is the label
+                actions = np.array(f[f"{demo_key}/actions"])  # (T, 7)
+                T = actions.shape[0]
+
+                # joint motion norm, ignore gripper (dim 6)
+                joint_norms = np.linalg.norm(actions[:, :6], axis=-1)
+
                 for t in range(T - obs_horizon):
-                    self.indices.append((demo_key, t, t + obs_horizon))
+                    last_idx = t + obs_horizon - 1
+                    m = joint_norms[last_idx]
+
+                    # keep all big moves
+                    if m > 0.1:
+                        self.indices.append((demo_key, t, t + obs_horizon))
+                    else:
+                        # keep some small ones with lower probability
+                        if np.random.rand() < 0.1:
+                            self.indices.append((demo_key, t, t + obs_horizon))
 
         # Observation dimension per timestep: joint_pos(7) + joint_vel(7) + gripper_qpos(2) = 16
         self.obs_dim = 28 
@@ -173,7 +185,7 @@ class DiffusionTrainer:
         device: str = "cpu",
         learning_rate: float = 1e-4,
         num_diffusion_iters: int = 1000,
-        save_file: str = "diffusion_policy_robot_28obs.pth"
+        save_file: str = "diffusion_policy_robot_28obs_new.pth"
     ):
         self.hdf5_path = hdf5_path
         self.obs_horizon = obs_horizon
@@ -270,7 +282,12 @@ class DiffusionTrainer:
                 )
 
                 # Diffusion loss: MSE between predicted and true noise
-                loss = nn.functional.mse_loss(noise_pred, noise)
+                # loss = nn.functional.mse_loss(noise_pred, noise)
+
+                weight = torch.ones_like(noise)
+                weight[:, 6] = 0.2
+
+                loss = ((weight * (noise_pred - noise) ** 2).mean())
 
                 optimizer.zero_grad()
                 loss.backward()
@@ -312,7 +329,7 @@ if __name__ == "__main__":
         device=device,
         learning_rate=1e-4,
         num_diffusion_iters=1000,
-        save_file="diffusion_policy_robot_28obs.pth"
+        save_file="diffusion_policy_robot_28obs_new.pth"
     )
 
     model = trainer.train(num_epochs=20, print_stats=True)

@@ -30,7 +30,7 @@
             "enabled": false,
             "n": 0,
             "horizon": 0,
-            "rate": 0,
+            "rate": 1,
             "warmstart": 0,
             "terminate_on_success": false
         },
@@ -40,10 +40,10 @@
     "train": {
         "data": [
             {
-                "path": "/home/kevin/Programming/Research/visual_occlusion/demonstrations_robomimic.hdf5"
+                "path": "/home/fri/visual_occlusion/demonstrations_robomimic.hdf5"
             }
         ],
-        "output_dir": "/home/kevin/Programming/Research/visual_occlusion/experiments/diffusion_custom_demo_20251126",
+        "output_dir": "~/visual_occlusion/experiments/diffusion_custom_demo_20251126",
         "normalize_weights_by_ds_size": false,
         "num_data_workers": 0,
         "hdf5_cache_mode": "all",

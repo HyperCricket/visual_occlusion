@@ -4,13 +4,18 @@ import os
 import argparse
 import numpy as np
 import torch
+import imageio
 
 import robomimic
 import robomimic.utils.file_utils as FileUtils
 import robomimic.utils.torch_utils as TorchUtils
 import robomimic.utils.env_utils as EnvUtils
 from robomimic.algo.algo import RolloutPolicy
+from robosuite.environments.base import register_env
+from control import StackWithCustomRandomization
 
+
+register_env(StackWithCustomRandomization)
 
 # -------------------------
 # Occlusion utilities

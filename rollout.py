@@ -83,7 +83,7 @@ OBS_DIM = 29
 ACTION_DIM = 7
 OBS_HORIZON = 16
 NUM_DIFFUSION_ITERS = 1000
-MODEL_PATH = "diffusion_policy_robot_29obs_phase.pth"   # change if you used a different filename
+MODEL_PATH = "/home/kevin/Programming/Research/visual_occlusion/experiments/lift_diffusion_image_v15/diffusion_lift_image_v15/20251201110550/last.pth"   # change if you used a different filename
 
 def load_diffusion_policy(path=MODEL_PATH, device=device):
     """

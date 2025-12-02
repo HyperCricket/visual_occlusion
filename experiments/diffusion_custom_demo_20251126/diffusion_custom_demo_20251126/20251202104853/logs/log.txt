@@ -1,0 +1,496 @@
+
+============= Initialized Observation Utils with Obs Spec =============
+
+using obs modality: low_dim with keys: ['cubeB_pos', 'robot0_eef_quat', 'robot0_joint_pos', 'robot0_gripper_qpos', 'cubeA_pos', 'gripper_to_cubeB', 'cubeA_quat', 'gripper_to_cubeA', 'cubeB_quat', 'robot0_joint_vel', 'robot0_eef_pos']
+using obs modality: rgb with keys: []
+using obs modality: depth with keys: []
+using obs modality: scan with keys: []
+
+============= Loaded Environment Metadata =============
+obs key cubeA_pos with shape (3,)
+obs key cubeA_quat with shape (4,)
+obs key cubeB_pos with shape (3,)
+obs key cubeB_quat with shape (4,)
+obs key gripper_to_cubeA with shape (3,)
+obs key gripper_to_cubeB with shape (3,)
+obs key robot0_eef_pos with shape (3,)
+obs key robot0_eef_quat with shape (4,)
+obs key robot0_gripper_qpos with shape (2,)
+obs key robot0_joint_pos with shape (7,)
+obs key robot0_joint_vel with shape (7,)
+
+SequenceDataset: loading dataset into memory...
+  0%|          | 0/90 [00:00<?, ?it/s] 19%|#8        | 17/90 [00:00<00:00, 165.01it/s] 39%|###8      | 35/90 [00:00<00:00, 171.29it/s] 62%|######2   | 56/90 [00:00<00:00, 185.73it/s] 87%|########6 | 78/90 [00:00<00:00, 196.53it/s]100%|##########| 90/90 [00:00<00:00, 190.96it/s]
+SequenceDataset: caching get_item calls...
+  0%|          | 0/201303 [00:00<?, ?it/s]SequenceDataset: computing action statistics...
+
+  0%|          | 0/89 [00:00<?, ?it/s][A100%|##########| 89/89 [00:00<00:00, 2501.13it/s]
+  1%|          | 1624/201303 [00:00<00:12, 16238.62it/s]  2%|2         | 4163/201303 [00:00<00:09, 21619.06it/s]  3%|3         | 6675/201303 [00:00<00:08, 23214.23it/s]  4%|4         | 8997/201303 [00:00<00:10, 19004.49it/s]  6%|5         | 11603/201303 [00:00<00:08, 21232.54it/s]  7%|7         | 14175/201303 [00:00<00:08, 22625.81it/s]  8%|8         | 16661/201303 [00:00<00:07, 23310.31it/s] 10%|9         | 19244/201303 [00:00<00:07, 24078.96it/s] 11%|#         | 21752/201303 [00:00<00:07, 24381.30it/s] 12%|#2        | 24329/201303 [00:01<00:07, 24797.21it/s] 13%|#3        | 26829/201303 [00:01<00:07, 24667.01it/s] 15%|#4        | 29310/201303 [00:01<00:06, 24636.84it/s] 16%|#5        | 31871/201303 [00:01<00:06, 24925.58it/s] 17%|#7        | 34371/201303 [00:01<00:06, 24827.39it/s] 18%|#8        | 36956/201303 [00:01<00:06, 25130.49it/s] 20%|#9        | 39544/201303 [00:01<00:06, 25352.72it/s] 21%|##        | 42083/201303 [00:01<00:06, 25217.09it/s] 22%|##2       | 44647/201303 [00:01<00:06, 25340.65it/s] 23%|##3       | 47183/201303 [00:01<00:06, 25193.00it/s] 25%|##4       | 49704/201303 [00:02<00:06, 24992.12it/s] 26%|##5       | 52205/201303 [00:02<00:05, 24917.04it/s] 27%|##7       | 54879/201303 [00:02<00:05, 25458.44it/s] 29%|##8       | 57544/201303 [00:02<00:05, 25812.96it/s] 30%|##9       | 60186/201303 [00:02<00:05, 25993.57it/s] 31%|###1      | 62876/201303 [00:02<00:05, 26263.14it/s] 33%|###2      | 65503/201303 [00:02<00:05, 25513.96it/s] 34%|###3      | 68159/201303 [00:02<00:05, 25820.32it/s] 35%|###5      | 70818/201303 [00:02<00:05, 26045.54it/s] 37%|###6      | 73491/201303 [00:02<00:04, 26247.59it/s] 38%|###7      | 76119/201303 [00:03<00:04, 26094.08it/s] 39%|###9      | 78731/201303 [00:03<00:04, 26053.62it/s] 40%|####      | 81338/201303 [00:03<00:04, 25798.81it/s] 42%|####1     | 83920/201303 [00:03<00:04, 25513.66it/s] 43%|####2     | 86473/201303 [00:03<00:04, 25401.60it/s] 44%|####4     | 89032/201303 [00:03<00:04, 25456.12it/s] 45%|####5     | 91582/201303 [00:03<00:04, 25467.46it/s] 47%|####6     | 94142/201303 [00:03<00:04, 25505.84it/s] 48%|####8     | 96693/201303 [00:03<00:04, 25463.01it/s] 49%|####9     | 99240/201303 [00:03<00:04, 25345.74it/s] 51%|#####     | 101775/201303 [00:04<00:03, 25332.09it/s] 52%|#####1    | 104309/201303 [00:04<00:03, 25308.74it/s] 53%|#####3    | 106840/201303 [00:04<00:03, 25275.61it/s] 54%|#####4    | 109368/201303 [00:04<00:04, 19343.91it/s] 56%|#####5    | 111931/201303 [00:04<00:04, 20891.08it/s] 57%|#####6    | 114463/201303 [00:04<00:03, 22041.71it/s] 58%|#####8    | 117038/201303 [00:04<00:03, 23044.33it/s] 59%|#####9    | 119608/201303 [00:04<00:03, 23783.99it/s] 61%|######    | 122127/201303 [00:04<00:03, 24184.11it/s] 62%|######1   | 124643/201303 [00:05<00:03, 24463.57it/s] 63%|######3   | 127189/201303 [00:05<00:02, 24753.26it/s] 64%|######4   | 129696/201303 [00:05<00:02, 24697.58it/s] 66%|######5   | 132188/201303 [00:05<00:02, 24490.13it/s] 67%|######6   | 134755/201303 [00:05<00:02, 24836.08it/s] 68%|######8   | 137261/201303 [00:05<00:02, 24899.48it/s] 69%|######9   | 139775/201303 [00:05<00:02, 24970.09it/s] 71%|#######   | 142327/201303 [00:05<00:02, 25133.46it/s] 72%|#######1  | 144880/201303 [00:05<00:02, 25250.69it/s] 73%|#######3  | 147443/201303 [00:06<00:02, 25363.32it/s] 75%|#######4  | 149982/201303 [00:06<00:02, 25117.85it/s] 76%|#######5  | 152496/201303 [00:06<00:01, 24911.66it/s] 77%|#######7  | 155068/201303 [00:06<00:01, 25150.88it/s] 78%|#######8  | 157585/201303 [00:06<00:01, 25073.30it/s] 80%|#######9  | 160094/201303 [00:06<00:01, 24936.15it/s] 81%|########  | 162589/201303 [00:06<00:01, 24893.28it/s] 82%|########2 | 165079/201303 [00:06<00:01, 24726.52it/s] 83%|########3 | 167579/201303 [00:06<00:01, 24807.31it/s] 84%|########4 | 170061/201303 [00:06<00:01, 24135.76it/s] 86%|########5 | 172511/201303 [00:07<00:01, 24239.86it/s] 87%|########6 | 174990/201303 [00:07<00:01, 24398.98it/s] 88%|########8 | 177536/201303 [00:07<00:00, 24711.98it/s] 89%|########9 | 180010/201303 [00:07<00:00, 24517.81it/s] 91%|######### | 182484/201303 [00:07<00:00, 24581.75it/s] 92%|#########1| 184982/201303 [00:07<00:00, 24698.03it/s] 93%|#########3| 187554/201303 [00:07<00:00, 25001.41it/s] 94%|#########4| 190055/201303 [00:07<00:00, 24987.97it/s] 96%|#########5| 192582/201303 [00:07<00:00, 25070.97it/s] 97%|#########6| 195090/201303 [00:07<00:00, 24961.26it/s] 98%|#########8| 197587/201303 [00:08<00:00, 24285.11it/s] 99%|#########9| 200020/201303 [00:08<00:00, 23794.72it/s]100%|##########| 201303/201303 [00:08<00:00, 24558.60it/s]
+SequenceDataset: loading dataset into memory...
+  0%|          | 0/10 [00:00<?, ?it/s]100%|##########| 10/10 [00:00<00:00, 179.34it/s]
+SequenceDataset: caching get_item calls...
+  0%|          | 0/23928 [00:00<?, ?it/s]SequenceDataset: computing action statistics...
+
+  0%|          | 0/9 [00:00<?, ?it/s][A100%|##########| 9/9 [00:00<00:00, 1989.71it/s]
+ 10%|9         | 2363/23928 [00:00<00:00, 23622.25it/s] 21%|##        | 5014/23928 [00:00<00:00, 25317.94it/s] 32%|###1      | 7546/23928 [00:00<00:00, 25096.85it/s] 42%|####2     | 10056/23928 [00:00<00:00, 22563.08it/s] 52%|#####2    | 12551/23928 [00:00<00:00, 23360.95it/s] 62%|######2   | 14915/23928 [00:00<00:00, 22451.59it/s] 72%|#######2  | 17337/23928 [00:00<00:00, 22992.64it/s] 83%|########2 | 19753/23928 [00:00<00:00, 23347.68it/s] 92%|#########2| 22102/23928 [00:00<00:00, 23263.16it/s]100%|##########| 23928/23928 [00:01<00:00, 23402.87it/s]
+
+============= Training Dataset =============
+SequenceDataset (
+	path=/home/kevin/Programming/Research/visual_occlusion/demonstrations_robomimic.hdf5
+	obs_keys=('cubeA_pos', 'cubeA_quat', 'cubeB_pos', 'cubeB_quat', 'gripper_to_cubeA', 'gripper_to_cubeB', 'robot0_eef_pos', 'robot0_eef_quat', 'robot0_gripper_qpos', 'robot0_joint_pos', 'robot0_joint_vel')
+	seq_length=16
+	filter_key=train
+	frame_stack=2
+	pad_seq_length=True
+	pad_frame_stack=True
+	goal_mode=none
+	cache_mode=all
+	num_demos=90
+	num_sequences=201303
+)
+
+
+============= Validation Dataset =============
+SequenceDataset (
+	path=/home/kevin/Programming/Research/visual_occlusion/demonstrations_robomimic.hdf5
+	obs_keys=('cubeA_pos', 'cubeA_quat', 'cubeB_pos', 'cubeB_quat', 'gripper_to_cubeA', 'gripper_to_cubeB', 'robot0_eef_pos', 'robot0_eef_quat', 'robot0_gripper_qpos', 'robot0_joint_pos', 'robot0_joint_vel')
+	seq_length=16
+	filter_key=valid
+	frame_stack=2
+	pad_seq_length=True
+	pad_frame_stack=True
+	goal_mode=none
+	cache_mode=all
+	num_demos=10
+	num_sequences=23928
+)
+
+number of parameters: 6.645172e+07
+
+============= Model Summary =============
+DiffusionPolicyUNet (
+  ModuleDict(
+    (policy): ModuleDict(
+      (obs_encoder): ObservationGroupEncoder(
+          group=obs
+          ObservationEncoder(
+              Key(
+                  name=cubeA_pos
+                  shape=[3]
+                  modality=low_dim
+                  randomizer=ModuleList(
+                    (0): None
+                  )
+                  net=None
+                  sharing_from=None
+              )
+              Key(
+                  name=cubeA_quat
+                  shape=[4]
+                  modality=low_dim
+                  randomizer=ModuleList(
+                    (0): None
+                  )
+                  net=None
+                  sharing_from=None
+              )
+              Key(
+                  name=cubeB_pos
+                  shape=[3]
+                  modality=low_dim
+                  randomizer=ModuleList(
+                    (0): None
+                  )
+                  net=None
+                  sharing_from=None
+              )
+              Key(
+                  name=cubeB_quat
+                  shape=[4]
+                  modality=low_dim
+                  randomizer=ModuleList(
+                    (0): None
+                  )
+                  net=None
+                  sharing_from=None
+              )
+              Key(
+                  name=gripper_to_cubeA
+                  shape=[3]
+                  modality=low_dim
+                  randomizer=ModuleList(
+                    (0): None
+                  )
+                  net=None
+                  sharing_from=None
+              )
+              Key(
+                  name=gripper_to_cubeB
+                  shape=[3]
+                  modality=low_dim
+                  randomizer=ModuleList(
+                    (0): None
+                  )
+                  net=None
+                  sharing_from=None
+              )
+              Key(
+                  name=robot0_eef_pos
+                  shape=[3]
+                  modality=low_dim
+                  randomizer=ModuleList(
+                    (0): None
+                  )
+                  net=None
+                  sharing_from=None
+              )
+              Key(
+                  name=robot0_eef_quat
+                  shape=[4]
+                  modality=low_dim
+                  randomizer=ModuleList(
+                    (0): None
+                  )
+                  net=None
+                  sharing_from=None
+              )
+              Key(
+                  name=robot0_gripper_qpos
+                  shape=[2]
+                  modality=low_dim
+                  randomizer=ModuleList(
+                    (0): None
+                  )
+                  net=None
+                  sharing_from=None
+              )
+              Key(
+                  name=robot0_joint_pos
+                  shape=[7]
+                  modality=low_dim
+                  randomizer=ModuleList(
+                    (0): None
+                  )
+                  net=None
+                  sharing_from=None
+              )
+              Key(
+                  name=robot0_joint_vel
+                  shape=[7]
+                  modality=low_dim
+                  randomizer=ModuleList(
+                    (0): None
+                  )
+                  net=None
+                  sharing_from=None
+              )
+              output_shape=[43]
+          )
+      )
+      (noise_pred_net): ConditionalUnet1D(
+        (mid_modules): ModuleList(
+          (0-1): 2 x ConditionalResidualBlock1D(
+            (blocks): ModuleList(
+              (0-1): 2 x Conv1dBlock(
+                (block): Sequential(
+                  (0): Conv1d(1024, 1024, kernel_size=(5,), stride=(1,), padding=(2,))
+                  (1): GroupNorm(8, 1024, eps=1e-05, affine=True)
+                  (2): Mish()
+                )
+              )
+            )
+            (cond_encoder): Sequential(
+              (0): Mish()
+              (1): Linear(in_features=342, out_features=2048, bias=True)
+              (2): Unflatten(dim=-1, unflattened_size=(-1, 1))
+            )
+            (residual_conv): Identity()
+          )
+        )
+        (diffusion_step_encoder): Sequential(
+          (0): SinusoidalPosEmb()
+          (1): Linear(in_features=256, out_features=1024, bias=True)
+          (2): Mish()
+          (3): Linear(in_features=1024, out_features=256, bias=True)
+        )
+        (up_modules): ModuleList(
+          (0): ModuleList(
+            (0): ConditionalResidualBlock1D(
+              (blocks): ModuleList(
+                (0): Conv1dBlock(
+                  (block): Sequential(
+                    (0): Conv1d(2048, 512, kernel_size=(5,), stride=(1,), padding=(2,))
+                    (1): GroupNorm(8, 512, eps=1e-05, affine=True)
+                    (2): Mish()
+                  )
+                )
+                (1): Conv1dBlock(
+                  (block): Sequential(
+                    (0): Conv1d(512, 512, kernel_size=(5,), stride=(1,), padding=(2,))
+                    (1): GroupNorm(8, 512, eps=1e-05, affine=True)
+                    (2): Mish()
+                  )
+                )
+              )
+              (cond_encoder): Sequential(
+                (0): Mish()
+                (1): Linear(in_features=342, out_features=1024, bias=True)
+                (2): Unflatten(dim=-1, unflattened_size=(-1, 1))
+              )
+              (residual_conv): Conv1d(2048, 512, kernel_size=(1,), stride=(1,))
+            )
+            (1): ConditionalResidualBlock1D(
+              (blocks): ModuleList(
+                (0-1): 2 x Conv1dBlock(
+                  (block): Sequential(
+                    (0): Conv1d(512, 512, kernel_size=(5,), stride=(1,), padding=(2,))
+                    (1): GroupNorm(8, 512, eps=1e-05, affine=True)
+                    (2): Mish()
+                  )
+                )
+              )
+              (cond_encoder): Sequential(
+                (0): Mish()
+                (1): Linear(in_features=342, out_features=1024, bias=True)
+                (2): Unflatten(dim=-1, unflattened_size=(-1, 1))
+              )
+              (residual_conv): Identity()
+            )
+            (2): Upsample1d(
+              (conv): ConvTranspose1d(512, 512, kernel_size=(4,), stride=(2,), padding=(1,))
+            )
+          )
+          (1): ModuleList(
+            (0): ConditionalResidualBlock1D(
+              (blocks): ModuleList(
+                (0): Conv1dBlock(
+                  (block): Sequential(
+                    (0): Conv1d(1024, 256, kernel_size=(5,), stride=(1,), padding=(2,))
+                    (1): GroupNorm(8, 256, eps=1e-05, affine=True)
+                    (2): Mish()
+                  )
+                )
+                (1): Conv1dBlock(
+                  (block): Sequential(
+                    (0): Conv1d(256, 256, kernel_size=(5,), stride=(1,), padding=(2,))
+                    (1): GroupNorm(8, 256, eps=1e-05, affine=True)
+                    (2): Mish()
+                  )
+                )
+              )
+              (cond_encoder): Sequential(
+                (0): Mish()
+                (1): Linear(in_features=342, out_features=512, bias=True)
+                (2): Unflatten(dim=-1, unflattened_size=(-1, 1))
+              )
+              (residual_conv): Conv1d(1024, 256, kernel_size=(1,), stride=(1,))
+            )
+            (1): ConditionalResidualBlock1D(
+              (blocks): ModuleList(
+                (0-1): 2 x Conv1dBlock(
+                  (block): Sequential(
+                    (0): Conv1d(256, 256, kernel_size=(5,), stride=(1,), padding=(2,))
+                    (1): GroupNorm(8, 256, eps=1e-05, affine=True)
+                    (2): Mish()
+                  )
+                )
+              )
+              (cond_encoder): Sequential(
+                (0): Mish()
+                (1): Linear(in_features=342, out_features=512, bias=True)
+                (2): Unflatten(dim=-1, unflattened_size=(-1, 1))
+              )
+              (residual_conv): Identity()
+            )
+            (2): Upsample1d(
+              (conv): ConvTranspose1d(256, 256, kernel_size=(4,), stride=(2,), padding=(1,))
+            )
+          )
+        )
+        (down_modules): ModuleList(
+          (0): ModuleList(
+            (0): ConditionalResidualBlock1D(
+              (blocks): ModuleList(
+                (0): Conv1dBlock(
+                  (block): Sequential(
+                    (0): Conv1d(7, 256, kernel_size=(5,), stride=(1,), padding=(2,))
+                    (1): GroupNorm(8, 256, eps=1e-05, affine=True)
+                    (2): Mish()
+                  )
+                )
+                (1): Conv1dBlock(
+                  (block): Sequential(
+                    (0): Conv1d(256, 256, kernel_size=(5,), stride=(1,), padding=(2,))
+                    (1): GroupNorm(8, 256, eps=1e-05, affine=True)
+                    (2): Mish()
+                  )
+                )
+              )
+              (cond_encoder): Sequential(
+                (0): Mish()
+                (1): Linear(in_features=342, out_features=512, bias=True)
+                (2): Unflatten(dim=-1, unflattened_size=(-1, 1))
+              )
+              (residual_conv): Conv1d(7, 256, kernel_size=(1,), stride=(1,))
+            )
+            (1): ConditionalResidualBlock1D(
+              (blocks): ModuleList(
+                (0-1): 2 x Conv1dBlock(
+                  (block): Sequential(
+                    (0): Conv1d(256, 256, kernel_size=(5,), stride=(1,), padding=(2,))
+                    (1): GroupNorm(8, 256, eps=1e-05, affine=True)
+                    (2): Mish()
+                  )
+                )
+              )
+              (cond_encoder): Sequential(
+                (0): Mish()
+                (1): Linear(in_features=342, out_features=512, bias=True)
+                (2): Unflatten(dim=-1, unflattened_size=(-1, 1))
+              )
+              (residual_conv): Identity()
+            )
+            (2): Downsample1d(
+              (conv): Conv1d(256, 256, kernel_size=(3,), stride=(2,), padding=(1,))
+            )
+          )
+          (1): ModuleList(
+            (0): ConditionalResidualBlock1D(
+              (blocks): ModuleList(
+                (0): Conv1dBlock(
+                  (block): Sequential(
+                    (0): Conv1d(256, 512, kernel_size=(5,), stride=(1,), padding=(2,))
+                    (1): GroupNorm(8, 512, eps=1e-05, affine=True)
+                    (2): Mish()
+                  )
+                )
+                (1): Conv1dBlock(
+                  (block): Sequential(
+                    (0): Conv1d(512, 512, kernel_size=(5,), stride=(1,), padding=(2,))
+                    (1): GroupNorm(8, 512, eps=1e-05, affine=True)
+                    (2): Mish()
+                  )
+                )
+              )
+              (cond_encoder): Sequential(
+                (0): Mish()
+                (1): Linear(in_features=342, out_features=1024, bias=True)
+                (2): Unflatten(dim=-1, unflattened_size=(-1, 1))
+              )
+              (residual_conv): Conv1d(256, 512, kernel_size=(1,), stride=(1,))
+            )
+            (1): ConditionalResidualBlock1D(
+              (blocks): ModuleList(
+                (0-1): 2 x Conv1dBlock(
+                  (block): Sequential(
+                    (0): Conv1d(512, 512, kernel_size=(5,), stride=(1,), padding=(2,))
+                    (1): GroupNorm(8, 512, eps=1e-05, affine=True)
+                    (2): Mish()
+                  )
+                )
+              )
+              (cond_encoder): Sequential(
+                (0): Mish()
+                (1): Linear(in_features=342, out_features=1024, bias=True)
+                (2): Unflatten(dim=-1, unflattened_size=(-1, 1))
+              )
+              (residual_conv): Identity()
+            )
+            (2): Downsample1d(
+              (conv): Conv1d(512, 512, kernel_size=(3,), stride=(2,), padding=(1,))
+            )
+          )
+          (2): ModuleList(
+            (0): ConditionalResidualBlock1D(
+              (blocks): ModuleList(
+                (0): Conv1dBlock(
+                  (block): Sequential(
+                    (0): Conv1d(512, 1024, kernel_size=(5,), stride=(1,), padding=(2,))
+                    (1): GroupNorm(8, 1024, eps=1e-05, affine=True)
+                    (2): Mish()
+                  )
+                )
+                (1): Conv1dBlock(
+                  (block): Sequential(
+                    (0): Conv1d(1024, 1024, kernel_size=(5,), stride=(1,), padding=(2,))
+                    (1): GroupNorm(8, 1024, eps=1e-05, affine=True)
+                    (2): Mish()
+                  )
+                )
+              )
+              (cond_encoder): Sequential(
+                (0): Mish()
+                (1): Linear(in_features=342, out_features=2048, bias=True)
+                (2): Unflatten(dim=-1, unflattened_size=(-1, 1))
+              )
+              (residual_conv): Conv1d(512, 1024, kernel_size=(1,), stride=(1,))
+            )
+            (1): ConditionalResidualBlock1D(
+              (blocks): ModuleList(
+                (0-1): 2 x Conv1dBlock(
+                  (block): Sequential(
+                    (0): Conv1d(1024, 1024, kernel_size=(5,), stride=(1,), padding=(2,))
+                    (1): GroupNorm(8, 1024, eps=1e-05, affine=True)
+                    (2): Mish()
+                  )
+                )
+              )
+              (cond_encoder): Sequential(
+                (0): Mish()
+                (1): Linear(in_features=342, out_features=2048, bias=True)
+                (2): Unflatten(dim=-1, unflattened_size=(-1, 1))
+              )
+              (residual_conv): Identity()
+            )
+            (2): Identity()
+          )
+        )
+        (final_conv): Sequential(
+          (0): Conv1dBlock(
+            (block): Sequential(
+              (0): Conv1d(256, 256, kernel_size=(5,), stride=(1,), padding=(2,))
+              (1): GroupNorm(8, 256, eps=1e-05, affine=True)
+              (2): Mish()
+            )
+          )
+          (1): Conv1d(256, 7, kernel_size=(1,), stride=(1,))
+        )
+      )
+    )
+  )
+)
+
+**************************************************
+Warnings generated by robomimic have been duplicated here (from above) for convenience. Please check them carefully.
+[33mROBOMIMIC WARNING(
+    No private macro file found!
+    It is recommended to use a private macro file
+    To setup, run: python /home/kevin/Programming/Research/robomimic/robomimic/scripts/setup_macros.py
+)[0m
+**************************************************
+
+  0%|          | 0/1000 [00:00<?, ?it/s]  0%|          | 1/1000 [00:01<21:02,  1.26s/it]  0%|          | 2/1000 [00:02<18:44,  1.13s/it]  0%|          | 3/1000 [00:03<17:48,  1.07s/it]  0%|          | 4/1000 [00:04<17:38,  1.06s/it]  0%|          | 5/1000 [00:05<17:53,  1.08s/it]  1%|          | 6/1000 [00:06<17:30,  1.06s/it]  1%|          | 7/1000 [00:07<17:12,  1.04s/it]  1%|          | 8/1000 [00:08<16:36,  1.00s/it]  1%|          | 9/1000 [00:09<16:08,  1.02it/s]  1%|1         | 10/1000 [00:10<15:43,  1.05it/s]  1%|1         | 11/1000 [00:11<15:27,  1.07it/s]  1%|1         | 12/1000 [00:12<15:17,  1.08it/s]  1%|1         | 13/1000 [00:12<15:17,  1.08it/s]  1%|1         | 14/1000 [00:13<15:15,  1.08it/s]  2%|1         | 15/1000 [00:14<15:11,  1.08it/s]  2%|1         | 16/1000 [00:15<15:07,  1.08it/s]  2%|1         | 17/1000 [00:16<15:00,  1.09it/s]  2%|1         | 18/1000 [00:17<15:09,  1.08it/s]  2%|1         | 19/1000 [00:18<15:06,  1.08it/s]  2%|2         | 20/1000 [00:19<14:59,  1.09it/s]  2%|2         | 21/1000 [00:20<15:07,  1.08it/s]  2%|2         | 21/1000 [00:21<16:23,  1.00s/it]
+Traceback (most recent call last):
+  File "/home/kevin/Programming/Research/robomimic/robomimic/scripts/train.py", line 567, in <module>
+    main(args)
+  File "/home/kevin/Programming/Research/robomimic/robomimic/scripts/train.py", line 511, in main
+    train(config, device=device, resume=args.resume)
+  File "/home/kevin/Programming/Research/robomimic/robomimic/scripts/train.py", line 298, in train
+    step_log = TrainUtils.run_epoch(
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kevin/Programming/Research/robomimic/robomimic/utils/train_utils.py", line 696, in run_epoch
+    info = model.train_on_batch(input_batch, epoch, validate=validate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kevin/Programming/Research/robomimic/robomimic/algo/diffusion_policy.py", line 227, in train_on_batch
+    policy_grad_norms = TorchUtils.backprop_for_loss(
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kevin/Programming/Research/robomimic/robomimic/utils/torch_utils.py", line 255, in backprop_for_loss
+    loss.backward(retain_graph=retain_graph)
+  File "/home/kevin/venvs/mj/lib/python3.12/site-packages/torch/_tensor.py", line 625, in backward
+    torch.autograd.backward(
+  File "/home/kevin/venvs/mj/lib/python3.12/site-packages/torch/autograd/__init__.py", line 354, in backward
+    _engine_run_backward(
+  File "/home/kevin/venvs/mj/lib/python3.12/site-packages/torch/autograd/graph.py", line 841, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt

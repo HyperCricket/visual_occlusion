@@ -17,6 +17,7 @@ from robosuite.models.arenas import TableArena
 from robosuite.models.tasks import ManipulationTask
 from robosuite.environments.manipulation.stack import Stack
 from robosuite.utils.placement_samplers import UniformRandomSampler
+from robosuite.models.objects import BoxObject
 
 
 class StackWithCustomRandomization(Stack):
@@ -75,6 +76,20 @@ class StackWithCustomRandomization(Stack):
         self.cubeA = self.cubes[0]
         if len(self.cubes) > 1:
             self.cubeB = self.cubes[1]
+
+        occluder = BoxObject(
+            name="occluder",
+            size=[0.04, 0.04, 0.06],   # thicker/taller block
+            rgba=[0.3, 0.3, 0.3, 1.0],
+            obj_type="all",
+            duplicate_collision_geoms=True,
+        )
+
+        self.occluder = occluder
+
+        # Include occluder in mujoco_objects
+        all_objects = self.cubes + [self.occluder]
+
         # Create placement initializer with custom randomization
         self.placement_initializer = UniformRandomSampler(
             name="ObjectSampler",
@@ -111,7 +126,7 @@ class StackWithCustomRandomization(Stack):
 
 
 def main():
-    # Create environment with 10 cubes
+    # Create environment with N cubes
     env = StackWithCustomRandomization(
         num_cubes=2,  # Change this to add more or fewer cubes
         robots="Panda",
@@ -125,6 +140,7 @@ def main():
         control_freq=15,
         hard_reset=False,
     )
+
     env.reset()
 
     # Wrap this environment in a visualization wrapper

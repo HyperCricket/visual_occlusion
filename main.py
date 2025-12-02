@@ -20,3 +20,5 @@ for i in range(1000):
     action = np.random.randn(*env.action_spec[0].shape) * 0.1
     obs, reward, done, info = env.step(action)  # take action in the environment
     env.render()  # render on display
+
+env.close()

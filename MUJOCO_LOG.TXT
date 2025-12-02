@@ -1,0 +1,6 @@
+Sun Oct 12 16:14:46 2025
+ERROR: could not initialize GLFW
+
+Mon Nov 17 18:42:03 2025
+ERROR: could not create window
+

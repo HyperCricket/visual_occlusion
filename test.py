@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 """Gripper interaction demo.
 
 This script illustrates the process of importing grippers into a scene and making it interact
@@ -132,7 +131,7 @@ if __name__ == "__main__":
         sim.data.qfrc_applied[_ref_joint_vel_indexes] = sim.data.qfrc_bias[_ref_joint_vel_indexes]
         viewer.render()
         step += 1
-=======
+
 import torch
 
 if __name__ == "__main__":
@@ -157,4 +156,3 @@ if __name__ == "__main__":
 
     print("Sampled action:", sampled_action.cpu().numpy())
 
->>>>>>> 9cbb20b58b921e9fdb97857fc1f1ffbbaef1d6bc

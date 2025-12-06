@@ -114,15 +114,12 @@ def rollout(
     occlusion_mode: 'none' or 'center' (you can add more)
     image_obs_keys: which obs keys correspond to images for occlusion
     """
-    assert isinstance(policy, RolloutPolicy)
     assert not (render and (video_writer is not None))
 
     if camera_names is None:
-        # Robosuite Lift default cameras
         camera_names = ["agentview", "robot0_eye_in_hand"]
 
     if image_obs_keys is None:
-        # In robomimic image datasets, obs keys are usually like "<camera>_image"
         image_obs_keys = [f"{cam}_image" for cam in camera_names]
 
     stats = {
@@ -136,8 +133,10 @@ def rollout(
         "rewards": [],
     }
 
-    # Prepare policy for a new episode
-    policy.start_episode()
+    # Prepare policy for a new episode if it supports it
+    if isinstance(policy, RolloutPolicy) or hasattr(policy, "start_episode"):
+        policy.start_episode()
+
     obs = env.reset()
 
     for t in range(horizon):
@@ -244,26 +243,69 @@ def main():
     device = TorchUtils.get_torch_device(try_to_use_cuda=args.use_gpu)
     print(f"Using device: {device}")
 
-    # Load trained policy and checkpoint dict
-    policy, ckpt_dict = FileUtils.policy_from_checkpoint(
-        ckpt_path=args.ckpt_path,
-        device=device,
-        verbose=True,
-    )
+        # -----------------------------------------
+    # Inspect checkpoint to see what algo it is
+    # -----------------------------------------
+    ckpt_raw = torch.load(args.ckpt_path, map_location=device)
+    algo_name = ckpt_raw.get("algo_name", None)
+    print(f"Checkpoint algo_name: {algo_name}")
 
-    # Get config & rollout horizon
-    config, _ = FileUtils.config_from_checkpoint(ckpt_dict=ckpt_dict)
-    horizon = args.horizon or config.experiment.rollout.horizon
-    print(f"Using rollout horizon = {horizon}")
+    # -----------------------------------------
+    # Case 1: diffusion_policy checkpoint
+    # -----------------------------------------
+    if algo_name == "diffusion_policy":
+        #  Adjust this import to wherever your diffusion loader lives.
+        #  This assumes you already have a function like:
+        #  model, scheduler = load_diffusion_policy(path, device=...)
+        from rollout import load_diffusion_policy  # <- change module name if needed
 
-    # Build environment from checkpoint metadata
-    env, _ = FileUtils.env_from_checkpoint(
-        ckpt_dict=ckpt_dict,
-        env_name=None,                 # use env that policy was trained on
-        render=args.render,
-        render_offscreen=(args.video_path is not None),
-        verbose=True,
-    )
+        policy, _ = load_diffusion_policy(args.ckpt_path, device=device)
+
+        # We can still use env_from_checkpoint, since env metadata
+        # is independent of the algo name.
+        env, _ = FileUtils.env_from_checkpoint(
+            ckpt_dict=ckpt_raw,
+            env_name=None,  # use env the policy was trained on
+            render=args.render,
+            render_offscreen=(args.video_path is not None),
+            verbose=True,
+        )
+
+        # Try to get a rollout horizon; if not available, fall back
+        horizon = args.horizon
+        if horizon is None:
+            cfg = ckpt_raw.get("config", None)
+            try:
+                # if cfg is a nested dict
+                horizon = cfg["experiment"]["rollout"]["horizon"]
+            except Exception:
+                # fallback if we can't read it
+                horizon = 200
+        print(f"Using rollout horizon = {horizon}")
+
+    # -----------------------------------------
+    # Case 2: standard robomimic checkpoint
+    # -----------------------------------------
+    else:
+        policy, ckpt_dict = FileUtils.policy_from_checkpoint(
+            ckpt_path=args.ckpt_path,
+            device=device,
+            verbose=True,
+        )
+
+        # Get config & rollout horizon
+        config, _ = FileUtils.config_from_checkpoint(ckpt_dict=ckpt_dict)
+        horizon = args.horizon or config.experiment.rollout.horizon
+        print(f"Using rollout horizon = {horizon}")
+
+        # Build environment from checkpoint metadata
+        env, _ = FileUtils.env_from_checkpoint(
+            ckpt_dict=ckpt_dict,
+            env_name=None,                 # use env that policy was trained on
+            render=args.render,
+            render_offscreen=(args.video_path is not None),
+            verbose=True,
+        )
 
     # Seed
     if args.seed is not None:

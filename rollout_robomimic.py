@@ -170,11 +170,15 @@ def rollout(
                 frame = env.render(
                     mode="rgb_array",
                     camera_name=cam,
+                    height=256,
+                    width=256,
                 )
                 frames.append(frame)
-            if len(frames) > 0 and (t % video_skip == 0):
-                frame = np.concatenate(frames, axis=1) if len(frames) > 1 else frames[0]
-                video_writer.append_data(frame)
+
+        if len(frames) > 0 and (t % video_skip == 0):
+            frame = np.concatenate(frames, axis=1) if len(frames) > 1 else frames[0]
+            video_writer.append_data(frame)
+
 
         if done or success:
             break

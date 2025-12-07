@@ -15,82 +15,137 @@ from robosuite.environments.manipulation.lift import Lift
 from robosuite.models.objects import BoxObject
 from robosuite.models.arenas import TableArena
 from robosuite.models.tasks import ManipulationTask
+from robosuite.environments.manipulation.manipulation_env import ManipulationEnv
 from robosuite.environments.manipulation.stack import Stack
 from robosuite.utils.placement_samplers import UniformRandomSampler
 from robosuite.models.objects import BoxObject
 
+import numpy as np  # make sure this is at the top of the file
+
+def stack_cubeB_on_cubeA(env, obs):
+    """
+    After env.reset(), move cubeB so it is stacked on top of cubeA.
+
+    - Uses obs["cubeA_pos"] for cubeA's location
+    - Uses MuJoCo to find cubeB's free joint and rewrites its qpos
+    - Works even if env is wrapped in VisualizationWrapper
+    """
+    # If env is a wrapper (VisualizationWrapper), unwrap to get base env
+    base_env = getattr(env, "env", env)
+    sim = base_env.sim
+
+    # 1) Get cubeA position from observations (already correct)
+    cubeA_pos = np.array(obs["cubeA_pos"])   # shape (3,)
+
+    # 2) Compute desired cubeB center: directly above cubeA
+    cube_half = 0.02  # BoxObject size=[0.02,0.02,0.02] -> half side
+    top_center = cubeA_pos.copy()
+    top_center[2] = cubeA_pos[2] + 2.0 * cube_half  # one cube height above
+
+    # 3) Find cubeB body (note: names are "cubeA_main", "cubeB_main", ...)
+    try:
+        cubeA_body_id = sim.model.body_name2id("cubeA_main")
+        cubeB_body_id = sim.model.body_name2id("cubeB_main")
+    except Exception as e:
+        print("ERROR: could not find cubeA_main / cubeB_main bodies:", e)
+        print("Available bodies:", [sim.model.body_id2name(i) for i in range(sim.model.nbody)])
+        return
+
+    # 4) Find cubeB's joint and its qpos slice
+    body_jnt_adr = sim.model.body_jntadr[cubeB_body_id]
+    body_jnt_num = sim.model.body_jntnum[cubeB_body_id]
+    if body_jnt_num == 0:
+        print("WARNING: cubeB_main has no joints, cannot move it via qpos.")
+        return
+
+    joint_id = int(body_jnt_adr)  # first joint attached to cubeB_main
+    joint_name = sim.model.joint_id2name(joint_id)
+
+    addr = sim.model.get_joint_qpos_addr(joint_name)
+    if isinstance(addr, (tuple, list, np.ndarray)):
+        start, end = int(addr[0]), int(addr[1])
+    else:
+        start, end = int(addr), int(addr) + 7  # free joint -> 7 dof (xyz + quat)
+
+    sl = slice(start, end)
+
+    # 5) Rewrite cubeB free joint qpos
+    qpos = np.array(sim.data.qpos[sl], dtype=np.float64)
+    if qpos.shape[0] != 7:
+        print("WARNING: cubeB joint qpos has unexpected shape:", qpos.shape)
+        return
+
+    qpos[0:3] = top_center
+    qpos[3:] = np.array([1.0, 0.0, 0.0, 0.0])  # identity orientation
+
+    sim.data.qpos[sl] = qpos
+    sim.forward()
+
+    # 6) Debug print
+    print("cubeA body_xpos:", sim.data.body_xpos[cubeA_body_id])
+    print("cubeB body_xpos (stacked):", sim.data.body_xpos[cubeB_body_id])
 
 class StackWithCustomRandomization(Stack):
     def __init__(self, num_cubes=2, cube_colors=None, **kwargs):
         self.num_cubes = num_cubes
         self.cube_colors = cube_colors
-        self.cubes = []  # Will store cube objects
+        self.cubes = []
+        self.cube_body_ids = []
         super().__init__(**kwargs)
     
     def _load_model(self):
-        """
-        Loads an xml model, puts it in self.model
-        """
-        # Load manipulation environment (sets up robot)
-        from robosuite.environments.manipulation.manipulation_env import ManipulationEnv
         ManipulationEnv._load_model(self)
-        # Adjust base pose accordingly
+
         xpos = self.robots[0].robot_model.base_xpos_offset["table"](self.table_full_size[0])
         self.robots[0].robot_model.set_base_xpos(xpos)
-        # Load arena (table)
+
         mujoco_arena = TableArena(
             table_full_size=self.table_full_size,
             table_friction=self.table_friction,
             table_offset=self.table_offset,
         )
-        # Arena always gets set to zero origin
         mujoco_arena.set_origin([0, 0, 0])
-        # Define default colors
-        if not self.cube_colors:
-            self.cube_colors = [
-                [1.0, 0.0, 0.0, 1.0],  # Red
-                [0.0, 1.0, 0.0, 1.0],  # Green  
-                [0.0, 0.0, 1.0, 1.0],  # Blue
-                [1.0, 1.0, 0.0, 1.0],  # Yellow
-                [1.0, 0.0, 1.0, 1.0],  # Magenta
-                [0.0, 1.0, 1.0, 1.0],  # Cyan
-                [1.0, 0.5, 0.0, 1.0],  # Orange
-                [0.5, 0.0, 1.0, 1.0],  # Purple
-                [0.5, 0.5, 0.5, 1.0],  # Gray
-                [0.8, 0.4, 0.2, 1.0],  # Brown
-            ]
-        # Create all cubes
+
+        # ---------- COLORS: only cubeA is red ----------
+        # cubeA: red
+        red = [1.0, 0.0, 0.0, 1.0]
+
+        # other cubes: anything BUT red
+        non_red_colors = [
+            [0.0, 1.0, 0.0, 1.0],  # green
+            [0.0, 0.0, 1.0, 1.0],  # blue
+            [1.0, 1.0, 0.0, 1.0],  # yellow
+            [1.0, 0.0, 1.0, 1.0],  # magenta
+            [0.0, 1.0, 1.0, 1.0],  # cyan
+            [1.0, 0.5, 0.0, 1.0],  # orange
+            [0.5, 0.0, 1.0, 1.0],  # purple
+            [0.5, 0.5, 0.5, 1.0],  # gray
+            [0.8, 0.4, 0.2, 1.0],  # brown
+        ]
+        # ----------------------------------------------
+
         self.cubes = []
         for i in range(self.num_cubes):
-            cube_name = f"cube{chr(65 + i)}"  # cubeA, cubeB, cubeC, etc.
+            cube_name = f"cube{chr(65 + i)}"  # "cubeA", "cubeB", ...
+
+            if i == 0:
+                rgba = red                      # cubeA always red
+            else:
+                rgba = non_red_colors[(i - 1) % len(non_red_colors)]  # others non-red
+
             cube = BoxObject(
                 name=cube_name,
                 size=[0.02, 0.02, 0.02],
-                rgba=self.cube_colors[i % len(self.cube_colors)],
+                rgba=rgba,
                 obj_type="all",
                 duplicate_collision_geoms=True,
             )
             self.cubes.append(cube)
-        
-        # Set cubeA and cubeB for compatibility with parent class
+
         self.cubeA = self.cubes[0]
         if len(self.cubes) > 1:
             self.cubeB = self.cubes[1]
 
-        occluder = BoxObject(
-            name="occluder",
-            size=[0.04, 0.04, 0.06],   # thicker/taller block
-            rgba=[0.3, 0.3, 0.3, 1.0],
-            obj_type="all",
-            duplicate_collision_geoms=True,
-        )
-
-        self.occluder = occluder
-
-        # Include occluder in mujoco_objects
-        all_objects = self.cubes + [self.occluder]
-
-        # Create placement initializer with custom randomization
         self.placement_initializer = UniformRandomSampler(
             name="ObjectSampler",
             mujoco_objects=self.cubes,
@@ -103,36 +158,26 @@ class StackWithCustomRandomization(Stack):
             reference_pos=self.table_offset,
             z_offset=0.01,
         )
-        # task includes arena, robot, and objects of interest
-        # Use ManipulationTask to properly combine everything
+
         self.model = ManipulationTask(
             mujoco_arena=mujoco_arena,
             mujoco_robots=[robot.robot_model for robot in self.robots],
             mujoco_objects=self.cubes,
         )
-    
+
     def _setup_references(self):
-        """
-        Sets up references to important components. A reference is typically an
-        index or a list of indices that point to the corresponding elements
-        in a flatten array, which is how MuJoCo stores physical simulation data.
-        """
         super()._setup_references()
-        # Additional object references for all cubes
         self.cube_body_ids = []
         for cube in self.cubes:
             body_id = self.sim.model.body_name2id(cube.root_body)
             self.cube_body_ids.append(body_id)
 
-
 def main():
-    # Create environment with N cubes
     env = StackWithCustomRandomization(
-        num_cubes=2,  # Change this to add more or fewer cubes
+        num_cubes=10,
         robots="Panda",
         has_renderer=True,
         has_offscreen_renderer=False,
-        # render_camera="agentview",
         render_camera="frontview",
         ignore_done=True,
         use_camera_obs=False,
@@ -142,7 +187,6 @@ def main():
     )
 
     env.reset()
-
     # Wrap this environment in a visualization wrapper
     env = VisualizationWrapper(env, indicator_configs=None)
 
@@ -173,7 +217,11 @@ def main():
         while True:
             # Reset the environment
             obs = env.reset()
-            
+            print("cubeA_pos:", obs["cubeA_pos"])
+            env.render()
+
+            stack_cubeB_on_cubeA(env, obs) 
+
             # RANDOMIZE JOINT POSITIONS (hand stays visible and near table center)
             robot = env.robots[0]
             

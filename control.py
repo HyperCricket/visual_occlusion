@@ -316,7 +316,6 @@ def main():
                 obs, reward, done, info = env.step(env_action)
                 actions_list.append(env_action)
 
-                # print("env_action shape:", env_action.shape)
 
                 obs_to_save = {
                     "robot0_joint_pos": obs["robot0_joint_pos"],
@@ -342,11 +341,6 @@ def main():
                 env.render()
             
             # ==== SAVE DEMONSTRATION TO HDF5 ====
-            # print("num obs:", len(observations_list))
-            # print("num actions:", len(actions_list))
-            # if len(actions_list) > 0:
-                # print("first action shape:", actions_list[0].shape)
-
             print(f"Demo {demo_counter} finished with {step_counter} steps. Saving...")
             
             # Save actions

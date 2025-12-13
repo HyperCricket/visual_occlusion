@@ -1,6 +1,6 @@
 import h5py, numpy as np
 
-path = "demonstrations_20251126_225141.hdf5"
+path = "demonstrations_20251206_203424.hdf5"
 
 with h5py.File(path, "r") as f:
     for demo_key in list(f.keys())[:5]:
